@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>学習塾SeeD 口座振替のお手続き</title>
+<style>
+  :root { --ink:#1a1a1a; --sub:#5a5a5a; --line:#e0e0e0; --green:#2E9E5B; --red:#c0392b; }
+  * { box-sizing:border-box; -webkit-text-size-adjust:100%; }
+  html,body { margin:0; background:#fff; color:var(--ink);
+    font-family:-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+    font-size:15px; line-height:1.8; }
+  #wrap { padding:22px 18px 40px; max-width:680px; margin:0 auto; }
+  .brand { font-size:13px; letter-spacing:.08em; color:var(--sub); }
+  .brand b { color:var(--ink); }
+  h1 { font-size:20px; margin:8px 0 14px; letter-spacing:.04em; }
+  .box { border:1px solid var(--line); border-radius:10px; padding:16px; background:#fafafa; margin:0 0 18px; }
+  .box h2 { font-size:15px; margin:0 0 8px; }
+  ol { margin:0; padding-left:20px; }
+  li { font-size:14px; margin-bottom:7px; }
+  .warn { border:1px solid #f0c9c4; background:#fdf6f5; color:#8e2c22; border-radius:10px;
+          padding:14px 16px; font-size:13.5px; margin:0 0 18px; }
+  .warn b { color:var(--red); }
+  .meta { font-size:12.5px; color:var(--sub); }
+  .btn { display:block; text-decoration:none; text-align:center; border-radius:10px; padding:16px;
+         font-size:16.5px; font-weight:700; color:#fff; background:var(--green); margin-top:6px; }
+  .foot { font-size:12px; color:var(--sub); margin-top:22px; text-align:center; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div class="brand">学習塾 <b>SeeD</b></div>
+  <h1>口座振替のお手続き</h1>
+
+  <div class="box">
+    <h2>お手続きの流れ</h2>
+    <ol>
+      <li>下のボタンから、振替口座の登録サイトを開きます。</li>
+      <li>お支払方法の選択で <b>「口座振替」</b> を選びます。</li>
+      <li>お客様情報を入力し、金融機関のサイトへ進みます。</li>
+      <li>金融機関で登録が完了したら、<b>必ず元のページに戻ります。</b></li>
+    </ol>
+    <p class="meta" style="margin:10px 0 0">所要 約5分／<b>印鑑・書類は不要</b>です。手数料はかかりません。</p>
+  </div>
+
+  <div class="warn">
+    <b>途中でブラウザを閉じないでください。</b>金融機関のサイトから戻らずに終了すると、口座の情報が登録されないことがあります。<br>
+    ※ 深夜2:00〜6:00はシステムメンテナンスのためご利用いただけません。
+  </div>
+
+  <a class="btn" id="go" href="#" style="opacity:.5;pointer-events:none">読み込み中…</a>
+
+  <p class="foot">お手続きが完了するまでの間は、お振込でのお支払いとなります。<br>
+  ご不明な点は公式LINEの「塾に連絡」からお問い合わせください。<br>引き落とし日は毎月27日です。</p>
+</div>
+<script>
+  var P = new URLSearchParams(location.search);
+  var EXEC = 'https://script.google.com/macros/s/AKfycbztDdOm_W6RlbxVj-TfG7zxjxhspaTkaGoDvY2qqy8o_enAMRWbtQi9RGNRyndZNLfE/exec';
+  var name = 'bankcb' + Math.floor(Math.random()*1e9);
+  window[name] = function(r){
+    var a = document.getElementById('go');
+    if (r && r.ok && r.bankUrl) {
+      a.href = r.bankUrl; a.textContent = '手続きページを開く';
+      a.style.opacity = 1; a.style.pointerEvents = 'auto';
+    } else {
+      a.textContent = 'リンクを取得できませんでした';
+    }
+  };
+  var s = document.createElement('script');
+  s.src = EXEC + '?action=bank_open&uid=' + encodeURIComponent(P.get('uid')||'')
+        + '&t=' + encodeURIComponent(P.get('t')||'') + '&callback=' + name;
+  s.onerror = function(){ window[name]({ok:false}); };
+  document.body.appendChild(s);
+</script>
+</body>
+</html>

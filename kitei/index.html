@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>学習塾SeeD 塾内規定・入塾同意書</title>
+<style>
+  :root { --ink:#1a1a1a; --sub:#5a5a5a; --line:#e0e0e0; --red:#c0392b; --green:#2E9E5B; }
+  * { box-sizing:border-box; -webkit-text-size-adjust:100%; }
+  html,body { margin:0; background:#fff; color:var(--ink);
+    font-family:-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+    font-size:15px; line-height:1.8; }
+  #wrap { padding:20px 18px 132px; max-width:680px; margin:0 auto; }
+
+  header { border-bottom:2px solid var(--ink); padding-bottom:14px; margin-bottom:18px; }
+  .brand { font-size:13px; letter-spacing:.08em; color:var(--sub); }
+  .brand b { color:var(--ink); }
+  h1 { font-size:21px; margin:8px 0 6px; letter-spacing:.06em; font-weight:700; }
+  .meta { font-size:11.5px; color:var(--sub); }
+  .lead { font-size:13.5px; color:var(--sub); margin:12px 0 0; }
+
+  section { margin:0 0 20px; }
+  h2 { font-size:15.5px; margin:0 0 6px; padding-bottom:5px; border-bottom:1px solid var(--line);
+       font-weight:700; display:flex; gap:8px; align-items:baseline; }
+  h2 .no { color:var(--red); font-size:13px; white-space:nowrap; }
+  .new { font-size:10px; color:#fff; background:var(--red); border-radius:3px;
+         padding:1px 5px 2px; letter-spacing:.04em; }
+  ul { margin:0; padding-left:20px; }
+  li { margin-bottom:5px; font-size:14px; }
+  .note { font-size:12px; color:var(--sub); margin:6px 0 0; }
+  b.hl { background:linear-gradient(transparent 62%, #ffe9e6 62%); }
+
+  #endmark { margin:26px 0 0; padding:16px; border:1px solid var(--line); border-radius:10px;
+             background:#fafafa; }
+  #endmark p { margin:0 0 10px; font-size:13.5px; }
+  label.chk { display:flex; gap:10px; align-items:flex-start; font-size:14.5px; font-weight:700;
+              cursor:pointer; padding:6px 0; }
+  label.chk input { width:22px; height:22px; margin:2px 0 0; flex:0 0 auto; accent-color:var(--green); }
+
+  #bar { position:fixed; left:0; right:0; bottom:0; background:rgba(255,255,255,.97);
+         border-top:1px solid var(--line); padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+         box-shadow:0 -6px 18px rgba(0,0,0,.06); }
+  #hint { font-size:12px; color:var(--sub); text-align:center; margin:0 0 8px; }
+  #agree { width:100%; border:0; border-radius:10px; padding:15px; font-size:16.5px; font-weight:700;
+           color:#fff; background:var(--green); cursor:pointer; font-family:inherit; }
+  #agree[disabled] { background:#c8c8c8; cursor:default; }
+
+  #done { display:none; padding:34px 20px 60px; max-width:680px; margin:0 auto; text-align:center; }
+  #done .tick { font-size:44px; color:var(--green); line-height:1; }
+  #done h2 { display:block; border:0; font-size:19px; margin:14px 0 6px; }
+  #done p { font-size:14px; color:var(--sub); margin:0 0 8px; }
+  #done .box { text-align:left; border:1px solid var(--line); border-radius:10px; padding:16px;
+               margin:22px 0 0; background:#fafafa; }
+  #done .box h3 { margin:0 0 8px; font-size:15px; }
+  #done .box li { font-size:13.5px; }
+  .btn { display:block; text-decoration:none; text-align:center; border-radius:10px; padding:15px;
+         font-size:16px; font-weight:700; color:#fff; background:var(--green); margin-top:16px; }
+  .btn.sub { background:#fff; color:var(--ink); border:1px solid #c8c8c8; font-weight:400; font-size:14px; }
+</style>
+</head>
+<body>
+
+<div id="wrap">
+  <header>
+    <div class="brand">学習塾 <b>SeeD</b></div>
+    <h1>塾内規定・入塾同意書</h1>
+    <div class="meta">版数 <span id="ver">v2026.1</span>　／　2026年度適用</div>
+    <p class="lead">本規定は、生徒が安心して学習に集中できる環境を保つために定めるものです。最後までお読みいただき、いちばん下の「同意する」を押してください。</p>
+  </header>
+
+  <section>
+    <h2><span class="no">第1条</span>テスト対策期間について</h2>
+    <ul>
+      <li>定期テスト前の2週間を「テスト対策期間」といいます。</li>
+      <li>期間中は、学校（部活）が終わり次第、毎日自習に来てください。</li>
+      <li>日曜日・祝日は10時〜21時まで自習を行います。</li>
+      <li>体調不良や外せないご用事がある場合は、できるだけ保護者様からご連絡ください。</li>
+      <li>ご連絡なく自習に来られていない場合は、当塾からご本人様または保護者様へご連絡いたします。</li>
+      <li>受験生は原則として毎日がテスト対策期間です。毎日自習に来てください。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="no">第2条</span>自習について</h2>
+    <ul>
+      <li>授業がない日であっても、自習に来ることを推奨しています。</li>
+      <li>テスト対策期間中および受験生は、原則毎日自習に来てください。</li>
+      <li>休憩時間外の私語などは見つけ次第注意し、それでも従わない場合は帰宅していただくことがあります。</li>
+      <li>お友達同士では隣にならないようお座りください。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="no">第3条</span>授業の振替について</h2>
+    <ul>
+      <li>当日の欠席連絡の場合は、原則お振替いたしません。できるだけ前日までにご連絡をお願いいたします。</li>
+      <li>個別授業を受講の場合、1か月にお振替できるのは1週間の授業回数までとします。</li>
+      <li>集団授業を受講の場合は原則お振替いたしませんが、次の授業についていけるようフォローいたします。そのフォローは授業時間（50分）より短くなります。</li>
+      <li>お振替した授業は、1対4まで人数が増える場合があります。</li>
+      <li>担当講師が普段と異なる場合があります。</li>
+      <li>振替の消化期限は、欠席された日から1か月とします。1か月を過ぎてからのお申し出には対応いたしかねます。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="no">第4条</span>遅刻について</h2>
+    <ul>
+      <li>当日のご連絡ではお振替できません。遅刻された場合も、残り時間で授業を受けてください。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="no">第5条</span>教材・質問について</h2>
+    <ul>
+      <li>受講教科のテキストをご購入いただきます。</li>
+      <li>受講教科以外のテキストも、お申し出いただければご購入いただけます。</li>
+      <li>担当講師以外に質問しても構いません。</li>
+      <li>受講教科以外の質問もお受けしますが、1から説明することはできません。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="no">第6条</span>施設のご利用について</h2>
+    <ul>
+      <li>駐輪場は屋外にあるため、駐輪していたことで生じた故障などのトラブルには対応いたしかねます。</li>
+      <li>忘れ物をされた際は、ご自宅へ取りに帰っていただきます。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="no">第7条</span>休講について</h2>
+    <ul>
+      <li>台風などの自然災害により休講する場合があります。</li>
+      <li>その場合は公式LINEおよびメールでご連絡いたします。</li>
+      <li>自然災害などによる休講は、必ず別日にお振替いたします。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="no">第8条</span>月謝とお支払いについて<span class="new">新</span></h2>
+    <ul>
+      <li>月謝は<b class="hl">当月分を当月27日に口座振替</b>にてお引き落としします（27日が金融機関の休業日の場合は翌営業日）。</li>
+      <li>口座振替のお手続きが完了するまでの間は、お振込にてお支払いいただきます。</li>
+      <li>英検・模試の受験料、季節講習（夏期・冬期・春期）の講習会費、入塾金などは、<b class="hl">その月の月謝と合算して1回でお引き落とし</b>します。</li>
+      <li>ご請求の内訳は、毎月、公式LINEの「月謝確認」からご確認いただけます。</li>
+      <li>残高不足などでお引き落としができなかった場合は、公式LINEでご連絡のうえ、お振込に切り替えていただきます。</li>
+      <li>大阪市塾代助成カードをご利用の場合は、<b class="hl">ご利用になる月額を事前にお申し出ください</b>。お申し出のあった額を月謝から差し引いてご請求します。</li>
+      <li>授業料の滞納が2か月続いた場合は退塾勧告を行い、3か月続いた場合は退塾となります。</li>
+    </ul>
+    <p class="note">※ 本条は2026年度の運用（当月27日振替・一時費目の合算請求）に合わせて新たに定めるものです。</p>
+  </section>
+
+  <section>
+    <h2><span class="no">第9条</span>休塾・退塾について<span class="new">新</span></h2>
+    <ul>
+      <li>退塾をご希望の場合は、<b class="hl">前月末までに</b>ご連絡ください。</li>
+      <li>月の途中で退塾をお申し出いただいた場合も、当月分の返金はいたしかねます。</li>
+      <li>休塾をご希望の場合は、前月末までにご連絡ください。休塾中の月謝はいただきません。</li>
+      <li>他の生徒への迷惑行為、犯罪行為などを行った場合は退塾勧告をいたします。その後1週間で改善が見られない場合は退塾していただきます。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="no">第10条</span>返金について</h2>
+    <ul>
+      <li>授業料、模試などの試験料につきましては、原則返金いたしません。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="no">第11条</span>公式LINEのご利用について<span class="new">新</span></h2>
+    <ul>
+      <li>ご入塾後、保護者様と生徒様それぞれに公式LINEのログイン用パスワードを発行します。</li>
+      <li>生徒様が入室・退室時にQRコードを読み取ると、<b class="hl">保護者様のLINEに入室・退室のお知らせが届きます</b>。</li>
+      <li>その日の学習内容、および授業の最後に出された宿題・確認テストを、保護者様と生徒様の双方にお届けします。</li>
+      <li>月謝のご請求内容、休講のご連絡なども公式LINEでお送りします。</li>
+      <li>パスワードは第三者に共有しないでください。学習記録・ご請求内容の閲覧に用いるためです。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="no">第12条</span>個人情報の取り扱いについて</h2>
+    <ul>
+      <li>お預かりした個人情報は、授業・イベント・講座のご案内、ご請求の送付、学習状況のご報告の目的で使用します。</li>
+      <li>法令に基づく場合を除き、ご本人の同意なく第三者に提供することはありません。</li>
+    </ul>
+  </section>
+
+  <div id="endmark">
+    <p>塾内規定を遵守し通塾することに同意し、入塾を申し込みます。塾内規定にあるように、受講態度不良や受講料の滞納などが認められる場合、退塾となっても異議を申し立てません。また、個人情報につきまして、イベント・講座のご案内、ご請求の送付、学習状況のご報告に使用することに同意します。</p>
+    <label class="chk"><input type="checkbox" id="ck"><span>上記の内容を確認し、同意します</span></label>
+    <p class="note">「同意する」を押すと、ご同意の日時と規定の版数を当塾にて記録いたします。押印・書面のご提出は不要です。</p>
+  </div>
+</div>
+
+<div id="bar">
+  <p id="hint">最後までスクロールしてチェックを入れてください</p>
+  <button id="agree" disabled>同意する</button>
+</div>
+
+<div id="done">
+  <div class="tick">✓</div>
+  <h2>ご同意ありがとうございます</h2>
+  <p>塾内規定への同意を記録しました。</p>
+  <div class="box">
+    <h3>次に、口座振替のお手続きをお願いします</h3>
+    <ul>
+      <li>所要は約5分、<b>印鑑・書類は不要</b>です。</li>
+      <li>お支払方法の選択で「口座振替」を選び、金融機関のサイトで登録します。</li>
+      <li><b>登録後は必ず元のページに戻ってください。</b>途中で閉じると登録されないことがあります。</li>
+      <li>お手続きが完了するまでの間は、お振込でのお支払いになります。</li>
+    </ul>
+    <a class="btn" id="bankbtn" href="#">口座振替のお手続きへ</a>
+    <a class="btn sub" href="#" id="later">あとで手続きする</a>
+  </div>
+</div>
+
+<script>
+  var P = new URLSearchParams(location.search);
+  var UID = P.get('uid') || '', TOKEN = P.get('t') || '';
+  var EXEC = 'https://script.google.com/macros/s/AKfycbztDdOm_W6RlbxVj-TfG7zxjxhspaTkaGoDvY2qqy8o_enAMRWbtQi9RGNRyndZNLfE/exec';
+  function jsonp(params, cb){
+    var name = 'seedcb' + Math.floor(performance.now()*1000) + Math.floor(Math.random()*1e6);
+    window[name] = function(res){ try{ cb(res); } finally { delete window[name]; } };
+    var s = document.createElement('script');
+    s.src = EXEC + '?' + params + '&callback=' + name;
+    s.onerror = function(){ cb({ ok:false, message:'通信に失敗しました。' }); };
+    document.body.appendChild(s);
+  }
+  // 開いたことを記録＋版数を取得
+  jsonp('action=consent_open&uid=' + encodeURIComponent(UID) + '&t=' + encodeURIComponent(TOKEN),
+    function(r){ if (r && r.version) document.getElementById('ver').textContent = r.version; });
+  var ck = document.getElementById('ck'), btn = document.getElementById('agree'),
+      hint = document.getElementById('hint'), bottomSeen = false;
+
+  function atBottom() {
+    var el = document.documentElement;
+    return (window.innerHeight + window.scrollY) >= (el.scrollHeight - 60);
+  }
+  function refresh() {
+    if (atBottom()) bottomSeen = true;
+    var ok = bottomSeen && ck.checked;
+    btn.disabled = !ok;
+    hint.textContent = !bottomSeen ? '最後までスクロールしてください'
+                     : (!ck.checked ? 'チェックを入れると押せます' : 'ご確認ありがとうございます');
+  }
+  window.addEventListener('scroll', refresh, { passive: true });
+  window.addEventListener('resize', refresh);
+  ck.addEventListener('change', refresh);
+  refresh();
+
+  var sending = false;
+  btn.addEventListener('click', function () {
+    if (sending || btn.disabled) return;
+    sending = true;
+    btn.textContent = '送信中…';
+    btn.disabled = true;
+    jsonp('action=consent_web&uid=' + encodeURIComponent(UID) + '&t=' + encodeURIComponent(TOKEN),
+      function (res) {
+      if (res && res.ok) {
+        document.getElementById('wrap').style.display = 'none';
+        document.getElementById('bar').style.display = 'none';
+        var bb = document.getElementById('bankbtn');
+        if (res.bankUrl) { bb.href = res.bankUrl; } else { bb.style.display = 'none'; }
+        document.getElementById('done').style.display = 'block';
+        window.scrollTo(0, 0);
+      } else {
+        sending = false;
+        btn.disabled = false;
+        btn.textContent = '同意する';
+        hint.textContent = (res && res.message) ? res.message : '送信に失敗しました。通信環境をご確認ください。';
+      }
+    });
+  });
+
+  document.getElementById('later').addEventListener('click', function (e) {
+    e.preventDefault();
+    document.getElementById('done').innerHTML =
+      '<div class="tick">✓</div><h2>同意を記録しました</h2>' +
+      '<p>口座振替のお手続きは、公式LINEのメニューからいつでも行えます。<br>このページは閉じてください。</p>';
+  });
+</script>
+</body>
+</html>
