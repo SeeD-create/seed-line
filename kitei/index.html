@@ -201,18 +201,16 @@
 <div id="done">
   <div class="tick">✓</div>
   <h2>ご同意ありがとうございます</h2>
-  <p>塾内規定への同意を記録しました。</p>
+  <p>塾内規定への同意を記録しました。<br>公式LINEのすべての機能をご利用いただけます。</p>
   <div class="box">
-    <h3>次に、口座振替のお手続きをお願いします</h3>
+    <h3>お支払いについて</h3>
     <ul>
-      <li>所要は約5分、<b>印鑑・書類は不要</b>です。</li>
-      <li>お支払方法の選択で「口座振替」を選び、金融機関のサイトで登録します。</li>
-      <li><b>登録後は必ず元のページに戻ってください。</b>途中で閉じると登録されないことがあります。</li>
-      <li>お手続きが完了するまでの間は、お振込でのお支払いになります。</li>
+      <li>月謝は<b>当月分を当月27日に口座振替</b>でお引き落としします。</li>
+      <li>口座振替のお手続きは、<b>塾でお渡しする用紙</b>からお願いします。</li>
+      <li>お手続きが済むまでの間は、お振込でのお支払いになります。</li>
     </ul>
-    <a class="btn" id="bankbtn" href="#">口座振替のお手続きへ</a>
-    <a class="btn sub" href="#" id="later">あとで手続きする</a>
   </div>
+  <p style="font-size:13px;color:var(--sub);margin-top:20px">このページは閉じて、LINEにお戻りください。</p>
 </div>
 
 <script>
@@ -227,7 +225,6 @@
     s.onerror = function(){ cb({ ok:false, message:'通信に失敗しました。' }); };
     document.body.appendChild(s);
   }
-  // 開いたことを記録＋版数を取得
   jsonp('action=consent_open&uid=' + encodeURIComponent(UID) + '&t=' + encodeURIComponent(TOKEN),
     function(r){ if (r && r.version) document.getElementById('ver').textContent = r.version; });
   var ck = document.getElementById('ck'), btn = document.getElementById('agree'),
@@ -260,8 +257,6 @@
       if (res && res.ok) {
         document.getElementById('wrap').style.display = 'none';
         document.getElementById('bar').style.display = 'none';
-        var bb = document.getElementById('bankbtn');
-        if (res.bankUrl) { bb.href = res.bankUrl; } else { bb.style.display = 'none'; }
         document.getElementById('done').style.display = 'block';
         window.scrollTo(0, 0);
       } else {
@@ -273,12 +268,6 @@
     });
   });
 
-  document.getElementById('later').addEventListener('click', function (e) {
-    e.preventDefault();
-    document.getElementById('done').innerHTML =
-      '<div class="tick">✓</div><h2>同意を記録しました</h2>' +
-      '<p>口座振替のお手続きは、公式LINEのメニューからいつでも行えます。<br>このページは閉じてください。</p>';
-  });
 </script>
 </body>
 </html>
