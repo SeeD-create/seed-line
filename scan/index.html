@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>学習塾SeeD 入退室</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  body{font-family:-apple-system,"Segoe UI",sans-serif;margin:0;background:#0A2818;color:#fff;text-align:center}
+  #wrap{max-width:560px;margin:0 auto;padding:0 12px 24px}
+  h1{font-size:24px;margin:16px 0 2px;color:#8BC34A}
+  .hint{color:#9fb3a6;font-size:15px;margin-bottom:10px}
+  #reader{width:100%;border-radius:16px;overflow:hidden;background:#000}
+  #frameMsg{font-size:14px;color:#cfe;margin:8px 0;min-height:18px}
+  #status{margin:14px 0;border-radius:16px;padding:24px;background:#143A24;min-height:96px;display:flex;flex-direction:column;justify-content:center}
+  .big{font-size:38px;font-weight:bold}
+  .sub{font-size:17px;margin-top:8px;color:#cfe}
+  .in{color:#7CFC9A}.out{color:#7EC8FF}.err{color:#FF8A8A}
+  .pt{margin-top:10px;font-size:22px;color:#E2B852}
+  button{font-size:17px;padding:13px 20px;border:0;border-radius:12px;background:#2E9E5B;color:#fff;margin:6px;cursor:pointer}
+  .manual{margin-top:14px}
+  .manual input{font-size:22px;padding:11px 14px;border-radius:10px;border:2px solid #2E9E5B;text-align:center;width:60%}
+  a{color:#8BC34A;font-size:12px}
+</style>
+</head>
+<body><div id="wrap">
+  <h1>🌱 学習塾SeeD 入退室</h1>
+  <div class="hint">カードを枠の中にかざしてね</div>
+  <div id="reader"></div>
+  <div id="frameMsg"></div>
+  <button id="startBtn">▶ カメラを開始</button>
+  <div id="status"><div class="sub">「カメラを開始」を押して、カードをかざしてください</div></div>
+  <div class="manual">
+    <div class="sub">読めない時は手入力＋Enter（USBスキャナもここでOK）</div>
+    <input id="code" autocomplete="off" placeholder="コード">
+  </div>
+  <div style="margin-top:12px"><a href="#" id="resetLink">合言葉を再設定</a></div>
+</div>
+
+<script>
+  // ▼▼▼ ここだけ塾ごとに設定 ▼▼▼
+  // GAS本番デプロイの /exec URL（末尾 /exec まで。?以降は付けない）
+  var EXEC_URL = "https://script.google.com/macros/s/AKfycbztDdOm_W6RlbxVj-TfG7zxjxhspaTkaGoDvY2qqy8o_enAMRWbtQi9RGNRyndZNLfE/exec";
+  // ▲▲▲ ここまで ▲▲▲
+
+  var st = document.getElementById('status');
+  var frameMsg = document.getElementById('frameMsg');
+  var codeEl = document.getElementById('code');
+  var last = { code: null, t: 0 };
+
+  var PRESET = new URLSearchParams(location.search).get('secret') || '';
+  if (PRESET) localStorage.setItem('attendSecret', PRESET);
+  function getSecret() {
+    var s = PRESET || localStorage.getItem('attendSecret') || '';
+    if (!s) { s = prompt('スキャナの合言葉(ATTEND_SECRET)を入力してください') || ''; if (s) localStorage.setItem('attendSecret', s); }
+    return s;
+  }
+  document.getElementById('resetLink').addEventListener('click', function (e) {
+    e.preventDefault(); localStorage.removeItem('attendSecret');
+    alert('合言葉をリセットしました。次の読み取り時に再入力します。');
+  });
+
+  // JSONP（<script>タグでGASを呼び、結果をコールバックで受ける＝CORS不要）
+  var _i = 0;
+  function jsonp(params, cb) {
+    var name = '__cb' + (++_i);
+    var s = document.createElement('script');
+    var done = false;
+    window[name] = function (data) { done = true; cb(data); cleanup(); };
+    function cleanup() { try { delete window[name]; } catch (e) { window[name] = undefined; } if (s.parentNode) s.parentNode.removeChild(s); }
+    var q = Object.keys(params).map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
+    s.src = EXEC_URL + '?' + q + '&callback=' + name;
+    s.onerror = function () { if (!done) { cb({ ok: false, message: '通信エラー' }); cleanup(); } };
+    document.body.appendChild(s);
+    setTimeout(function () { if (!done) { cb({ ok: false, message: 'タイムアウト' }); cleanup(); } }, 12000);
+  }
+
+  function render(r) {
+    if (!r || !r.ok) { st.innerHTML = '<div class="big err">✕</div><div class="sub">' + ((r && r.message) || '通信に失敗しました') + '</div>'; return; }
+    if (r.type === '入室') {
+      st.innerHTML = '<div class="big in">🟢 入室</div><div class="sub">' + r.name + ' さん</div>';
+    } else {
+      var p = r.awarded > 0
+        ? '<div class="pt">自習pt +' + r.awarded + ' / 残高' + r.balance + 'pt</div>'
+        : '<div class="sub">滞在' + r.minutes + '分（加点は60分以上）</div>';
+      st.innerHTML = '<div class="big out">🔵 退室</div><div class="sub">' + r.name + ' さん（滞在' + r.minutes + '分）</div>' + p;
+    }
+  }
+
+  function submit(code) {
+    if (!code) return;
+    st.innerHTML = '<div class="sub">処理中…</div>';
+    jsonp({ action: 'checkin', code: code, secret: getSecret() }, render);
+  }
+
+  function onDecoded(text) {
+    var now = Date.now();
+    if (text === last.code && now - last.t < 4000) return; // 同コード4秒クールダウン
+    last = { code: text, t: now };
+    submit(String(text).trim());
+  }
+
+  function camErr(e) {
+    document.getElementById('startBtn').style.display = '';
+    frameMsg.innerHTML = '<span class="err">カメラを開けませんでした（' + ((e && e.message) ? e.message : e) + '）。下の手入力をご利用ください。</span>';
+  }
+
+  document.getElementById('startBtn').addEventListener('click', function () {
+    this.style.display = 'none';
+    var qr = new Html5Qrcode('reader');
+    var cfg = { fps: 10, qrbox: { width: 250, height: 250 } };
+    Html5Qrcode.getCameras().then(function (devs) {
+      var id = (devs && devs.length) ? devs[devs.length - 1].id : null;
+      qr.start(id || { facingMode: 'environment' }, cfg, onDecoded, function () {})
+        .then(function () { frameMsg.innerHTML = '📷 読み取り中…枠の中にカードをかざしてね'; })
+        .catch(camErr);
+    }).catch(function () {
+      qr.start({ facingMode: 'environment' }, cfg, onDecoded, function () {})
+        .then(function () { frameMsg.innerHTML = '📷 読み取り中…'; })
+        .catch(camErr);
+    });
+  });
+
+  codeEl.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter') { ev.preventDefault(); var c = codeEl.value.trim(); codeEl.value = ''; submit(c); }
+  });
+</script>
+</body>
+</html>
