@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>学習塾SeeD｜生徒・講師のみなさんへ</title>
+<!--
+  このページは「時間割はどこ？」「フォームはどこ？」の入口を1枚にまとめたもの。
+  ◆ 更新のしかた：このファイルを直して git push するだけ（URLは変わらない）
+  ◆ 載せてよいもの＝公開情報のみ。管理DB・GASエディタ・経理・鍵つきURLは絶対に載せない
+  ◆ ★PENDING の href は正URLが決まり次第差し替える
+-->
+<style>
+  :root{ --green:#2E9E5B; --green-d:#1E7A45; --ink:#1F242A; --sub:#66716a;
+         --bg:#f2f6f3; --card:#fff; --line:#dbe5dd; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.7;
+    font-family:-apple-system,"Hiragino Sans","Yu Gothic","Segoe UI",sans-serif;}
+  header{background:#0A2818;color:#fff;padding:22px 18px 18px;}
+  header .juku{color:#8BC34A;font-size:13px;font-weight:700;letter-spacing:.08em;}
+  header h1{margin:4px 0 0;font-size:20px;font-weight:800;}
+  header p{margin:6px 0 0;font-size:12.5px;color:#b7c6bc;}
+  main{max-width:640px;margin:0 auto;padding:18px 14px 40px;}
+  h2{font-size:14px;color:var(--green-d);letter-spacing:.1em;margin:26px 4px 10px;
+     padding-left:10px;border-left:4px solid var(--green);}
+  h2:first-of-type{margin-top:18px;}
+  a.item{display:flex;gap:12px;align-items:center;text-decoration:none;color:inherit;
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:14px 14px;margin-bottom:9px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+  a.item:active{background:#eef5ef;}
+  .ic{font-size:22px;flex:0 0 auto;width:28px;text-align:center;}
+  .nm{font-weight:700;font-size:15px;}
+  .ds{font-size:12px;color:var(--sub);margin-top:1px;}
+  .soon{opacity:.55;pointer-events:none;}
+  .soon .nm::after{content:"（準備中）";font-size:11px;color:#b06a2c;font-weight:600;margin-left:6px;}
+  .note{background:#FFF8E4;border:1px solid #EADFB0;border-radius:10px;
+    padding:10px 14px;font-size:12.5px;color:#6d5716;margin:10px 0 0;}
+  footer{max-width:640px;margin:0 auto;padding:0 18px 40px;font-size:11.5px;color:var(--sub);}
+</style>
+</head>
+<body>
+<header>
+  <div class="juku">学習塾SeeD</div>
+  <h1>生徒・講師のみなさんへ</h1>
+  <p>時間割・連絡・各種ページの入口です。ホーム画面に追加しておくと便利です。</p>
+</header>
+<main>
+
+  <h2>生徒のみなさん</h2>
+
+  <!-- ★PENDING: 時間割（生徒用）の正URLが決まったら href を差し替えて class="item soon" → class="item" にする -->
+  <a class="item soon" href="#">
+    <span class="ic">🗓️</span>
+    <span><div class="nm">時間割（生徒用）</div>
+    <div class="ds">自分の授業の曜日・時間をここで確認できます</div></span>
+  </a>
+
+  <a class="item" href="https://lin.ee/Ppg9BMf">
+    <span class="ic">💬</span>
+    <span><div class="nm">公式LINE（友だち追加）</div>
+    <div class="ds">お知らせ・マイページ・入室用QRはすべてここから</div></span>
+  </a>
+
+  <a class="item" href="https://line.me/ti/p/i3_SjLiei0">
+    <span class="ic">📞</span>
+    <span><div class="nm">塾に連絡する</div>
+    <div class="ds">欠席・遅刻・振替の連絡はこちらのLINEへ</div></span>
+  </a>
+
+  <a class="item" href="https://seed-create.github.io/seed-line/kitei/">
+    <span class="ic">📕</span>
+    <span><div class="nm">塾内規定</div>
+    <div class="ds">通塾のきまり・お願いごと</div></span>
+  </a>
+
+  <div class="note">
+    🎫 <b>入室用QRの出し方</b>：公式LINEで「塾生ログイン」→ マイページ → 入室用QR。
+    紙のカードをなくした人は塾で再発行できます。
+  </div>
+
+  <h2>講師のみなさん</h2>
+
+  <!-- ★PENDING: 時間割（講師用）の正URL待ち -->
+  <a class="item soon" href="#">
+    <span class="ic">🗓️</span>
+    <span><div class="nm">時間割（講師用）</div>
+    <div class="ds">担当コマ・教室の割り当て</div></span>
+  </a>
+
+  <!-- ★PENDING: 授業報告フォームの正URL待ち -->
+  <a class="item soon" href="#">
+    <span class="ic">📝</span>
+    <span><div class="nm">授業報告フォーム</div>
+    <div class="ds">授業後の報告はこちらから</div></span>
+  </a>
+
+  <!-- ★PENDING: 2026年度出勤簿フォームの正URL待ち（旧年度に出す誤りが多いので必ずここから開く運用に） -->
+  <a class="item soon" href="#">
+    <span class="ic">🕒</span>
+    <span><div class="nm">出勤簿（2026年度）</div>
+    <div class="ds">出勤の記録。必ずこのリンクから開いてください（旧年度と間違えないため）</div></span>
+  </a>
+
+  <a class="item" href="https://seed-create.github.io/seed-line/scan/">
+    <span class="ic">📷</span>
+    <span><div class="nm">入退室スキャナ（受付用）</div>
+    <div class="ds">教室の受付PC・タブレット用。合言葉が必要です</div></span>
+  </a>
+
+</main>
+<footer>
+  リンク切れ・追加してほしいものがあれば塾までお知らせください。（2026-08-12 更新）
+</footer>
+</body>
+</html>
