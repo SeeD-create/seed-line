@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>学習塾SeeD 入室QR</title>
+<!--
+  入室用QR表示ページ（GASの ?page=myqr の自前ホスト版・2026-08-12）
+  ◆ なぜここにあるか：GASのWebアプリは上部に「このアプリケーションは…」バナーが
+    強制表示され消せない。生徒が毎回見せる画面なので、自前ホストでバナー無しにした。
+  ◆ データはURLの**ハッシュフラグメント**（#c=生徒パス&n=氏名）で受ける。
+    フラグメントはサーバーに送信されないので、GitHubのアクセスログにも生徒パスが残らない
+    （旧GAS版はクエリで渡していた＝これより露出が少ない）。?c=&n= のクエリも後方互換で受ける。
+  ◆ 通信は一切しない（QRはページ内JSで生成）。GAS APIも呼ばない。
+-->
+<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+<style>
+body{font-family:-apple-system,"Segoe UI",sans-serif;margin:0;background:#0A2818;color:#fff;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;box-sizing:border-box}
+.ttl{color:#8BC34A;font-size:15px;margin-bottom:4px}
+.nm{font-size:20px;font-weight:bold;margin-bottom:18px}
+.qrbox{background:#fff;padding:18px;border-radius:16px;display:inline-block}
+.hint{font-size:13px;color:#cfe;margin-top:18px;line-height:1.6}
+.err{color:#FFB3B3;font-size:14px;line-height:1.8;padding:12px}
+</style>
+</head>
+<body>
+<div class="ttl">🌱 学習塾SeeD 入室カード</div>
+<div class="nm" id="nm"></div>
+<div class="qrbox" id="box"><div id="q"></div></div>
+<div class="hint" id="hint">この画面を受付のカメラにかざしてね📷<br>入室・退室が記録されます。</div>
+<script>
+(function () {
+  function parse(str) {
+    var out = {};
+    String(str || '').replace(/^[#?]/, '').split('&').forEach(function (kv) {
+      var i = kv.indexOf('=');
+      if (i < 0) return;
+      try { out[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1)); } catch (e) {}
+    });
+    return out;
+  }
+  var h = parse(location.hash);
+  var q = parse(location.search);
+  var code = h.c || h.code || q.c || q.code || '';
+  var name = h.n || h.name || q.n || q.name || '';
+  if (!code) {
+    document.getElementById('box').style.display = 'none';
+    document.getElementById('hint').className = 'err';
+    document.getElementById('hint').innerHTML = 'QRを表示できませんでした（コードが空です）。<br>LINEのマイページから開き直してください。';
+    return;
+  }
+  document.getElementById('nm').textContent = name ? (name + 'さん') : '';
+  new QRCode(document.getElementById('q'), { text: String(code), width: 260, height: 260, correctLevel: QRCode.CorrectLevel.M });
+})();
+</script>
+</body>
+</html>
