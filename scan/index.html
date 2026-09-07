@@ -104,8 +104,9 @@
       setTimeout(function () { o.stop(); }, ms);
     } catch (e) {}
   }
-  function beepOk() { tone(880, 90); }   // 打刻できた
-  function beepNg() { tone(240, 260); }  // 弾かれた（低く長い音で区別する）
+  function beepRead() { tone(660, 40); }  // 読み取った（送信はこれから）
+  function beepOk() { tone(880, 90); }    // 打刻できた
+  function beepNg() { tone(240, 260); }   // 弾かれた（低く長い音で区別する）
 
   /** サーバーが返す文字列には未登録QRの中身がそのまま混ざる。HTMLとして解釈させない */
   function esc(v) {
@@ -164,7 +165,9 @@
       st.innerHTML = '<div class="big err">✕</div><div class="sub">設定が済んでいません（下の案内を見てね）</div>';
       return;
     }
-    st.innerHTML = '<div class="sub">処理中…</div>';
+    // GASの往復は4〜5秒かかる（実測）。無言で待たせると受付が「反応してない」と思って
+    // 何度もかざすので、読めた合図はここで先に返す（2026-09-07）
+    st.innerHTML = '<div class="big" style="color:#8BC34A">✓</div><div class="sub">読み取りました。記録中…</div>';
     jsonp({ action: 'checkin', code: code, secret: sec }, render);
   }
 
@@ -172,6 +175,7 @@
     var now = Date.now();
     if (text === last.code && now - last.t < 4000) return; // 同コード4秒クールダウン
     last = { code: text, t: now };
+    beepRead();  // 読めた瞬間に鳴らす。結果の音（高い/低い）は返ってきてから
     submit(String(text).trim());
   }
 
@@ -205,14 +209,23 @@
       formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
       verbose: false
     });
+    // 読み取り枠は広いほうがかざす位置を選ばない。BarcodeDetectorが効くPCでは
+    // 広くしても速度は落ちない（2026-09-07 感度上げ）
     var qbox = function (vw, vh) {
-      var s = Math.min(440, Math.floor(Math.min(vw, vh) * 0.8));
+      var s = Math.min(600, Math.floor(Math.min(vw, vh) * 0.9));
       return { width: s, height: s };
     };
     var cfg = {
       fps: 30, qrbox: qbox, disableFlip: true,
       experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     };
+    // 解像度を上げる。既定のままだと640x480で、印刷カードの細かいQRが潰れて
+    // ピントが合うまで読めない。1920x1080を要求して、無ければブラウザが落としてくれる。
+    function vcFor(deviceId) {
+      var vc = { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } };
+      if (deviceId) { vc.deviceId = { exact: deviceId }; } else { vc.facingMode = 'environment'; }
+      return vc;
+    }
     function ok() {
       frameMsg.innerHTML = '📷 読み取り中…枠の中にカードをかざしてね';
       st.innerHTML = '<div class="sub">カードをかざしてください</div>';
@@ -221,9 +234,14 @@
     function fail(e) { camStarted = false; camErr(e); }
     Html5Qrcode.getCameras().then(function (devs) {
       var id = (devs && devs.length) ? devs[devs.length - 1].id : null;
-      qr.start(id || { facingMode: 'environment' }, cfg, onDecoded, function () {}).then(ok).catch(fail);
+      qr.start(vcFor(id), cfg, onDecoded, function () {}).then(ok).catch(function () {
+        // 解像度の要求が通らないカメラもあるので、通らなければ素の指定でやり直す
+        qr.start(id || { facingMode: 'environment' }, cfg, onDecoded, function () {}).then(ok).catch(fail);
+      });
     }).catch(function () {
-      qr.start({ facingMode: 'environment' }, cfg, onDecoded, function () {}).then(ok).catch(fail);
+      qr.start(vcFor(null), cfg, onDecoded, function () {}).then(ok).catch(function () {
+        qr.start({ facingMode: 'environment' }, cfg, onDecoded, function () {}).then(ok).catch(fail);
+      });
     });
   }
 
