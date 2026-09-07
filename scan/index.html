@@ -185,13 +185,24 @@
     st.innerHTML = '<div class="sub">カメラが使えないときは、下の欄にコードを入れてEnter</div>';
   }
 
-  /** 連続オートフォーカス。印刷カードは近距離なのでこれが無いとピントが合わない */
-  function tuneFocus() {
+  /**
+   * 起動できてから、解像度とピントを上げる。
+   * 印刷カードは近距離＆QRが細かいので、640x480＋固定フォーカスだと読めない。
+   * start() に渡すと起動が失敗するカメラがあるので、必ず「起動後」にやる。
+   * 失敗しても映像は生きているので、段階的に諦める。
+   */
+  function tuneTrack() {
     try {
       var v = document.querySelector('#reader video');
       if (!v || !v.srcObject) return;
       var t = v.srcObject.getVideoTracks()[0];
-      if (t && t.applyConstraints) t.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function () {});
+      if (!t || !t.applyConstraints) return;
+      t.applyConstraints({
+        width: { ideal: 1920 }, height: { ideal: 1080 },
+        advanced: [{ focusMode: 'continuous' }]
+      }).catch(function () {
+        t.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function () {});
+      });
     } catch (e) {}
   }
 
@@ -219,29 +230,28 @@
       fps: 30, qrbox: qbox, disableFlip: true,
       experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     };
-    // 解像度を上げる。既定のままだと640x480で、印刷カードの細かいQRが潰れて
-    // ピントが合うまで読めない。1920x1080を要求して、無ければブラウザが落としてくれる。
-    function vcFor(deviceId) {
-      var vc = { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } };
-      if (deviceId) { vc.deviceId = { exact: deviceId }; } else { vc.facingMode = 'environment'; }
-      return vc;
-    }
+    // ⚠ 解像度を start() に渡すと、カメラによっては起動自体が失敗して
+    //   「カメラを準備しています」のまま止まる（2026-09-07に実際に止めた）。
+    //   起動は素の指定で通し、解像度は起動後に applyConstraints で上げる（tuneTrack）。
     function ok() {
       frameMsg.innerHTML = '📷 読み取り中…枠の中にカードをかざしてね';
       st.innerHTML = '<div class="sub">カードをかざしてください</div>';
-      tuneFocus();
+      tuneTrack();
     }
     function fail(e) { camStarted = false; camErr(e); }
+    // 何も起きないまま黙って止まるのが一番困るので、6秒で見切ってボタンを出す
+    var settled = false;
+    function ok2() { settled = true; ok(); }
+    function fail2(e) { settled = true; fail(e); }
+    setTimeout(function () {
+      if (!settled) { camStarted = false; camErr(new Error('カメラの応答がありません')); }
+    }, 6000);
+
     Html5Qrcode.getCameras().then(function (devs) {
       var id = (devs && devs.length) ? devs[devs.length - 1].id : null;
-      qr.start(vcFor(id), cfg, onDecoded, function () {}).then(ok).catch(function () {
-        // 解像度の要求が通らないカメラもあるので、通らなければ素の指定でやり直す
-        qr.start(id || { facingMode: 'environment' }, cfg, onDecoded, function () {}).then(ok).catch(fail);
-      });
+      qr.start(id || { facingMode: 'environment' }, cfg, onDecoded, function () {}).then(ok2).catch(fail2);
     }).catch(function () {
-      qr.start(vcFor(null), cfg, onDecoded, function () {}).then(ok).catch(function () {
-        qr.start({ facingMode: 'environment' }, cfg, onDecoded, function () {}).then(ok).catch(fail);
-      });
+      qr.start({ facingMode: 'environment' }, cfg, onDecoded, function () {}).then(ok2).catch(fail2);
     });
   }
 
