@@ -3,272 +3,86 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>学習塾SeeD 入退室</title>
+<meta name="referrer" content="no-referrer">
+<title>入退室受付 | 学習塾SeeD</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
-  body{font-family:-apple-system,"Segoe UI",sans-serif;margin:0;background:#0A2818;color:#fff;text-align:center}
-  #wrap{max-width:560px;margin:0 auto;padding:0 12px 24px}
-  h1{font-size:24px;margin:16px 0 2px;color:#8BC34A}
-  .hint{color:#9fb3a6;font-size:15px;margin-bottom:10px}
-  #reader{width:100%;border-radius:16px;overflow:hidden;background:#000}
-  #frameMsg{font-size:14px;color:#cfe;margin:8px 0;min-height:18px}
-  #status{margin:14px 0;border-radius:16px;padding:24px;background:#143A24;min-height:96px;display:flex;flex-direction:column;justify-content:center}
-  .big{font-size:38px;font-weight:bold}
-  .sub{font-size:17px;margin-top:8px;color:#cfe}
-  .in{color:#7CFC9A}.out{color:#7EC8FF}.err{color:#FF8A8A}
-  .pt{margin-top:10px;font-size:22px;color:#E2B852}
-  button{font-size:17px;padding:13px 20px;border:0;border-radius:12px;background:#2E9E5B;color:#fff;margin:6px;cursor:pointer}
-  .manual{margin-top:14px}
-  .manual input{font-size:22px;padding:11px 14px;border-radius:10px;border:2px solid #2E9E5B;text-align:center;width:60%}
-  #setup{display:none;margin:14px 0;border-radius:16px;padding:20px;background:#3A1414;text-align:left;font-size:15px;line-height:1.7}
-  #setup b{color:#FFB4B4}
-  a{color:#8BC34A;font-size:12px}
+:root{font-family:"Yu Gothic UI","Hiragino Sans",sans-serif;color:#163c38;background:#f3f6f2;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:3px solid #c49a35;outline-offset:4px}
+header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 5vw;background:#fff;border-bottom:1px solid #dce5df}header img{width:60px;height:56px;object-fit:contain}header span{font-size:15px;letter-spacing:.15em;font-weight:700}.brand{display:flex;align-items:center;gap:12px}.brand strong{font-size:23px;letter-spacing:.02em;white-space:nowrap}
+main{max-width:1360px;margin:0 auto;padding:36px 5vw}.eyebrow{font-size:12px;letter-spacing:.18em;font-weight:700;color:#647d74;margin-bottom:18px}.layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(260px,1fr);gap:28px;align-items:start}
+#status{min-height:365px;padding:40px;border:1px solid #dae4dd;border-radius:28px;background:#fff;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;transition:background .15s}
+#status:before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:#a6b8ae}.label{font-size:17px;font-weight:700;margin-bottom:18px}.title{font-size:clamp(30px,3.8vw,54px);line-height:1.4;font-weight:800;letter-spacing:-.04em;margin:0;overflow-wrap:anywhere}.detail{font-size:18px;line-height:1.8;margin:18px 0 0;color:#5b756c}.name{font-size:clamp(32px,4.3vw,64px);font-weight:800;line-height:1.4;overflow-wrap:anywhere}.name small{font-size:20px;margin-left:10px}.action{font-size:clamp(40px,5.2vw,76px);font-weight:800;line-height:1.2}
+#status[data-state="read"]{background:#e8f3ed}#status[data-state="read"]:before,#status[data-state="in"]:before{background:#198365}#status[data-state="in"]{background:#e8f3ed}#status[data-state="out"]{background:#e8f1fb;color:#235887}#status[data-state="out"]:before{background:#397daf}#status[data-state="error"]{background:#fff0eb;color:#9a3e26}#status[data-state="error"]:before{background:#b84929}
+.check{display:inline-flex;align-items:center;gap:10px}.check svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:2.5}.help{padding:18px 6px;font-size:16px;color:#577267;line-height:1.8}.help strong{color:#234d42}.camera{border-radius:24px;background:#183b34;padding:16px;color:#e6f2eb;overflow:hidden}.camera-head{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin:0 2px 13px;letter-spacing:.04em}.camera-head i{width:7px;height:7px;display:inline-block;border-radius:50%;background:#a4d8a3;margin-right:7px}
+#reader{width:100%;min-height:180px;background:#102923;border-radius:14px;overflow:hidden}#reader video{display:block;width:100%!important;max-height:320px;object-fit:cover}#frameMsg{font-size:13px;line-height:1.6;margin:12px 2px 0;min-height:21px}button{background:#fff;color:#245647;border:1px solid #cadad0;border-radius:10px;padding:10px 16px;font-weight:700}#startBtn{margin-top:12px;width:100%}.manual{margin-top:22px}.manual label{display:block;font-size:13px;font-weight:700;margin-bottom:8px}.input-row{display:flex;gap:8px}.manual input{min-width:0;width:100%;padding:13px;border:1px solid #ccd9d0;border-radius:10px;background:#fff;font-size:18px}.manual button{flex-shrink:0}
+#setup{background:#fff0eb;padding:20px;border-radius:16px;line-height:1.8;margin-bottom:20px}#queue{margin-top:22px}.queue-title{font-size:13px;color:#647d74;font-weight:700;margin-bottom:9px}.receipt{padding:15px 18px;border:1px solid #dbe4dd;border-radius:14px;background:#fff;margin-bottom:8px;display:flex;gap:12px;justify-content:space-between;align-items:center;overflow-wrap:anywhere}.receipt small{display:block;color:#6c7d73;margin-top:4px}.receipt.error{border-color:#ce8b78;color:#9a3e26}.receipt button{white-space:nowrap;font-size:13px}.quiet{font-size:12px;color:#788e81;line-height:1.7;margin-top:26px}footer{max-width:1360px;margin:auto;padding:0 5vw 26px;color:#778c81;font-size:12px;letter-spacing:.04em}
+@media(max-width:760px){header{padding:16px 20px;gap:8px}header img{width:44px;height:44px}header span{font-size:12px}.brand{gap:6px}.brand strong{font-size:18px}main{padding:24px 20px}.layout{grid-template-columns:minmax(0,1fr);gap:18px}#status{min-height:275px;padding:28px}.eyebrow{margin-bottom:12px}.detail{font-size:16px}.camera{max-width:100%}#reader{min-height:150px}#reader video{max-height:230px}.help{font-size:14px}.quiet{margin-top:16px}footer{padding:0 20px 22px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
-<body><div id="wrap">
-  <h1>🌱 学習塾SeeD 入退室</h1>
-  <div class="hint">カードを枠の中にかざしてね</div>
-  <div id="reader"></div>
-  <div id="frameMsg"></div>
-  <button id="startBtn" style="display:none">▶ カメラを開始</button>
-  <div id="status"><div class="sub">カメラを準備しています…</div></div>
-
-  <!-- 合言葉が入っていないPCで開いたときだけ出る案内。ここでも入力はさせない -->
-  <div id="setup">
-    <b>このパソコンは、まだ設定が済んでいません。</b><br>
-    塾ランチャーの「入退室スキャナ（カメラ版）」のリンクから開いてください。<br>
-    そのリンクを1回開けば、以後このパソコンでは何も入力せずに使えます。
-  </div>
-
-  <div class="manual">
-    <div class="sub">読めない時は手入力＋Enter（USBスキャナもここでOK）</div>
-    <input id="code" autocomplete="off" placeholder="コード">
-  </div>
+<body>
+<header><div class="brand"><img src="https://seed-create.github.io/seed-line/scan/seed-logo.png" alt=""><strong>学習塾SeeD</strong></div><span>入退室受付</span></header>
+<main>
+<div class="eyebrow">WELCOME TO SeeD</div>
+<div id="setup" hidden>この端末は設定が済んでいません。塾ランチャーの「入退室スキャナ」から開き直してください。</div>
+<div class="layout">
+<section>
+<div id="status" data-state="preparing" role="status" aria-live="polite"><div class="label">準備中</div><h1 class="title">カメラを<br>準備しています</h1><p class="detail">まだ、かざさずにお待ちください。</p></div>
+<div class="help"><strong>「読み取りました」が出たら、スマホを下ろして大丈夫です。</strong><br>入退室の記録とLINE通知は、そのあとに続きます。</div>
+<div id="queue" aria-live="polite"></div>
+</section>
+<aside>
+<div class="camera"><div class="camera-head"><span><i></i>QR READER</span><span>スマホ・カード対応</span></div><div id="reader"></div><p id="frameMsg">カメラに接続しています</p><button id="startBtn" hidden>カメラを開始</button></div>
+<form class="manual" id="manual"><label for="code">手入力・USBスキャナ</label><div class="input-row"><input id="code" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="コードを入力"><button type="submit">読み取る</button></div></form>
+<p class="quiet">読み取り音を有効にするには、画面を一度タップしてください。<br>記録を確認できないときは、受付画面にお知らせします。</p>
+</aside>
 </div>
-
+</main><footer>学習塾SeeD · 毎日の「来たよ」を、確かに。</footer>
 <script>
-  // ▼▼▼ ここだけ塾ごとに設定 ▼▼▼
-  // GAS本番デプロイの /exec URL（末尾 /exec まで。?以降は付けない）
-  var EXEC_URL = "https://script.google.com/macros/s/AKfycbztDdOm_W6RlbxVj-TfG7zxjxhspaTkaGoDvY2qqy8o_enAMRWbtQi9RGNRyndZNLfE/exec";
-  // ▲▲▲ ここまで ▲▲▲
-  // ⚠ 合言葉（ATTEND_SECRET）はここに書かない。このページは誰でも見られる公開ページなので、
-  //   書いた瞬間に誰でも打刻できてしまう。合言葉はブックマークURLの ?secret= から受け取り、
-  //   そのブラウザの localStorage にだけ置く（2026-09-07）。
-
-  var st = document.getElementById('status');
-  var frameMsg = document.getElementById('frameMsg');
-  var codeEl = document.getElementById('code');
-  var startBtn = document.getElementById('startBtn');
-  var setupBox = document.getElementById('setup');
-  var last = { code: null, t: 0 };
-
-  // ── 合言葉 ──
-  // 受付で人に打たせない（prompt は使わない）。URLに付いていれば保存し、
-  // 次回以降はURL無しでも動く。保存できたらアドレスバーからは消す。
-  var PRESET = '';
-  try { PRESET = new URLSearchParams(location.search).get('secret') || ''; } catch (e) { PRESET = ''; }
-  var presetSaved = false;
-  if (PRESET) {
-    // 保存できたことを読み戻して確かめる。保存できないブラウザ（プライベート等）で
-    // URLだけ消すと、再読み込みで設定を失う。
-    try {
-      localStorage.setItem('attendSecret', PRESET);
-      presetSaved = (localStorage.getItem('attendSecret') === PRESET);
-    } catch (e) { presetSaved = false; }
-    // 消すのは保存できたときだけ（受付モニタに合言葉を出しっぱなしにしない）
-    if (presetSaved) { try { history.replaceState(null, '', location.pathname); } catch (e) {} }
-  }
-  function getSecret() {
-    if (PRESET) return PRESET;
-    try { return localStorage.getItem('attendSecret') || ''; } catch (e) { return ''; }
-  }
-
-  // ── 音（読み取れたことを音で返す。受付は画面を見ていないので音が要る）──
-  // AudioContext は最初のクリック/キー入力までブラウザが鳴らさないので、
-  // どこかを1回触った時点で解錠しておく。
-  var actx = null;
-  function unlockAudio() {
-    try {
-      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-      if (actx.state === 'suspended') actx.resume();
-    } catch (e) {}
-  }
-  document.addEventListener('click', unlockAudio, { once: true });
-  document.addEventListener('keydown', unlockAudio, { once: true });
-  function tone(hz, ms) {
-    try {
-      if (!actx) return;
-      var o = actx.createOscillator(), g = actx.createGain();
-      o.frequency.value = hz; o.connect(g); g.connect(actx.destination);
-      g.gain.value = 0.18; o.start();
-      setTimeout(function () { o.stop(); }, ms);
-    } catch (e) {}
-  }
-  function beepRead() { tone(660, 40); }  // 読み取った（送信はこれから）
-  function beepOk() { tone(880, 90); }    // 打刻できた
-  function beepNg() { tone(240, 260); }   // 弾かれた（低く長い音で区別する）
-
-  /** サーバーが返す文字列には未登録QRの中身がそのまま混ざる。HTMLとして解釈させない */
-  function esc(v) {
-    return String(v == null ? '' : v)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  // JSONP（<script>タグでGASを呼び、結果をコールバックで受ける＝CORS不要）
-  var _i = 0;
-  function jsonp(params, cb) {
-    var name = '__cb' + (++_i);
-    var s = document.createElement('script');
-    var done = false;
-    window[name] = function (data) { done = true; cb(data); cleanup(); };
-    function cleanup() { try { delete window[name]; } catch (e) { window[name] = undefined; } if (s.parentNode) s.parentNode.removeChild(s); }
-    var q = Object.keys(params).map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
-    s.src = EXEC_URL + '?' + q + '&callback=' + name;
-    s.onerror = function () { if (!done) { cb({ ok: false, message: '通信エラー' }); cleanup(); } };
-    document.body.appendChild(s);
-    setTimeout(function () { if (!done) { cb({ ok: false, message: 'タイムアウト' }); cleanup(); } }, 12000);
-  }
-
-  function render(r) {
-    if (r && r.cooldown) {
-      st.innerHTML = '<div class="big" style="color:#E2B852">⏳</div><div class="sub">' + esc(r.message) + '</div>';
-      return;
-    }
-    if (!r || !r.ok) {
-      var msg = (r && r.message) || '通信に失敗しました';
-      // 「認証エラー」は受付では意味が通らないので、やることに言い換える
-      if (msg === '認証エラー') {
-        msg = 'このパソコンの設定が古いようです。塾ランチャーのリンクから開き直してください。';
-        setupBox.style.display = 'block';
-      }
-      beepNg();
-      st.innerHTML = '<div class="big err">✕</div><div class="sub">' + esc(msg) + '</div>';
-      return;
-    }
-    beepOk();
-    if (r.type === '入室') {
-      st.innerHTML = '<div class="big in">🟢 入室</div><div class="sub">' + esc(r.name) + ' さん</div>';
-    } else {
-      var p = r.awarded > 0
-        ? '<div class="pt">自習pt +' + esc(r.awarded) + ' / 残高' + esc(r.balance) + 'pt</div>'
-        : '<div class="sub">滞在' + esc(r.minutes) + '分（加点は60分以上）</div>';
-      st.innerHTML = '<div class="big out">🔵 退室</div><div class="sub">' + esc(r.name) + ' さん（滞在' + esc(r.minutes) + '分）</div>' + p;
-    }
-  }
-
-  function submit(code) {
-    if (!code) return;
-    var sec = getSecret();
-    if (!sec) {
-      setupBox.style.display = 'block';
-      st.innerHTML = '<div class="big err">✕</div><div class="sub">設定が済んでいません（下の案内を見てね）</div>';
-      return;
-    }
-    // GASの往復は4〜5秒かかる（実測）。無言で待たせると受付が「反応してない」と思って
-    // 何度もかざすので、読めた合図はここで先に返す（2026-09-07）
-    st.innerHTML = '<div class="big" style="color:#8BC34A">✓</div><div class="sub">読み取りました。記録中…</div>';
-    jsonp({ action: 'checkin', code: code, secret: sec }, render);
-  }
-
-  function onDecoded(text) {
-    var now = Date.now();
-    if (text === last.code && now - last.t < 4000) return; // 同コード4秒クールダウン
-    last = { code: text, t: now };
-    beepRead();  // 読めた瞬間に鳴らす。結果の音（高い/低い）は返ってきてから
-    submit(String(text).trim());
-  }
-
-  function camErr(e) {
-    startBtn.style.display = '';
-    frameMsg.innerHTML = '<span class="err">カメラを開けませんでした（' + ((e && e.message) ? e.message : e) + '）。上のボタンを押すか、下の手入力をご利用ください。</span>';
-    st.innerHTML = '<div class="sub">カメラが使えないときは、下の欄にコードを入れてEnter</div>';
-  }
-
-  /**
-   * 起動できてから、解像度とピントを上げる。
-   * 印刷カードは近距離＆QRが細かいので、640x480＋固定フォーカスだと読めない。
-   * start() に渡すと起動が失敗するカメラがあるので、必ず「起動後」にやる。
-   * 失敗しても映像は生きているので、段階的に諦める。
-   */
-  function tuneTrack() {
-    try {
-      var v = document.querySelector('#reader video');
-      if (!v || !v.srcObject) return;
-      var t = v.srcObject.getVideoTracks()[0];
-      if (!t || !t.applyConstraints) return;
-      t.applyConstraints({
-        width: { ideal: 1920 }, height: { ideal: 1080 },
-        advanced: [{ focusMode: 'continuous' }]
-      }).catch(function () {
-        t.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function () {});
-      });
-    } catch (e) {}
-  }
-
-  // ── カメラ起動 ──
-  // 開いた時点で自動で始める。ボタンは自動起動に失敗したときだけ出す。
-  // 設定はGAS版（?page=checkin）と同じ：fps30・枠は動画の8割・反転探索なし・
-  // ブラウザ内蔵のBarcodeDetectorを使えるなら使う。fps10だと card をかざしても読めないことがある。
-  var camStarted = false;
-  function startCamera() {
-    if (camStarted) return;
-    camStarted = true;
-    startBtn.style.display = 'none';
-    unlockAudio();
-    var qr = new Html5Qrcode('reader', {
-      formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-      verbose: false
-    });
-    // 読み取り枠は広いほうがかざす位置を選ばない。BarcodeDetectorが効くPCでは
-    // 広くしても速度は落ちない（2026-09-07 感度上げ）
-    var qbox = function (vw, vh) {
-      var s = Math.min(600, Math.floor(Math.min(vw, vh) * 0.9));
-      return { width: s, height: s };
-    };
-    var cfg = {
-      fps: 30, qrbox: qbox, disableFlip: true,
-      experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-    };
-    // ⚠ 解像度を start() に渡すと、カメラによっては起動自体が失敗して
-    //   「カメラを準備しています」のまま止まる（2026-09-07に実際に止めた）。
-    //   起動は素の指定で通し、解像度は起動後に applyConstraints で上げる（tuneTrack）。
-    function ok() {
-      frameMsg.innerHTML = '📷 読み取り中…枠の中にカードをかざしてね';
-      st.innerHTML = '<div class="sub">カードをかざしてください</div>';
-      tuneTrack();
-    }
-    function fail(e) { camStarted = false; camErr(e); }
-    // 何も起きないまま黙って止まるのが一番困るので、6秒で見切ってボタンを出す
-    var settled = false;
-    function ok2() { settled = true; ok(); }
-    function fail2(e) { settled = true; fail(e); }
-    setTimeout(function () {
-      if (!settled) { camStarted = false; camErr(new Error('カメラの応答がありません')); }
-    }, 6000);
-
-    Html5Qrcode.getCameras().then(function (devs) {
-      var id = (devs && devs.length) ? devs[devs.length - 1].id : null;
-      qr.start(id || { facingMode: 'environment' }, cfg, onDecoded, function () {}).then(ok2).catch(fail2);
-    }).catch(function () {
-      qr.start({ facingMode: 'environment' }, cfg, onDecoded, function () {}).then(ok2).catch(fail2);
-    });
-  }
-
-  startBtn.addEventListener('click', startCamera);
-
-  codeEl.addEventListener('keydown', function (ev) {
-    if (ev.key === 'Enter') { ev.preventDefault(); var c = codeEl.value.trim(); codeEl.value = ''; submit(c); }
-  });
-
-  // 合言葉が無いPCではカメラを開かず、先に案内を出す（かざしても弾かれるだけなので）
-  if (getSecret()) {
-    startCamera();
-  } else {
-    setupBox.style.display = 'block';
-    frameMsg.textContent = '';
-    st.innerHTML = '<div class="sub">このパソコンは設定が済んでいません（下の案内を見てね）</div>';
-  }
+/* GENERATED_GAS_PRESET */
+var EXEC_URL='https://script.google.com/macros/s/AKfycbztDdOm_W6RlbxVj-TfG7zxjxhspaTkaGoDvY2qqy8o_enAMRWbtQi9RGNRyndZNLfE/exec';
+var st=document.getElementById('status'),frameMsg=document.getElementById('frameMsg'),codeEl=document.getElementById('code'),startBtn=document.getElementById('startBtn');
+var isGas=typeof GAS_PRESET!=='undefined',preset=isGas?GAS_PRESET:(new URLSearchParams(location.search).get('secret')||'');
+try{if(preset){localStorage.setItem('attendSecret',preset);if(localStorage.getItem('attendSecret')===preset){if(isGas){google.script.history.replace({}, {page:'checkin'}, '');}else{var clean=new URL(location.href);clean.searchParams.delete('secret');history.replaceState(null,'',clean.pathname+clean.search+clean.hash);}}}}catch(e){}
+function getSecret(){if(preset)return preset;try{return localStorage.getItem('attendSecret')||'';}catch(e){return '';}}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+var actx=null;
+function unlockAudio(){try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume().catch(function(){});}catch(e){}}
+document.addEventListener('click',unlockAudio);document.addEventListener('keydown',unlockAudio);
+function tone(hz,ms){try{if(!actx||actx.state!=='running')return;var o=actx.createOscillator(),g=actx.createGain();o.frequency.value=hz;o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.16,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+ms/1000);o.start();o.stop(actx.currentTime+ms/1000);}catch(e){}}
+var tick='<span class="check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>読み取りました</span>';
+function state(kind,label,title,detail){st.dataset.state=kind;st.innerHTML='<div class="label">'+label+'</div><h1 class="title">'+title+'</h1><p class="detail">'+detail+'</p>';}
+function ready(){state('ready','受付中','QRをかざしてください','読み取れたら、すぐにお知らせします。');}
+var entries=[],currentId=null,sending=false,seen=Object.create(null),_i=0;
+try{entries=JSON.parse(sessionStorage.getItem('seedAttendanceOutbox')||'[]').filter(function(x){return x&&typeof x.code==='string'&&/^[\w-]{16,80}$/.test(x.id);}).map(function(x){return{id:x.id,code:x.code,state:'uncertain'};});}catch(e){entries=[];}
+function save(){try{sessionStorage.setItem('seedAttendanceOutbox',JSON.stringify(entries.filter(function(x){return x.state!=='done';}).map(function(x){return {id:x.id,code:x.code};})));}catch(e){}}
+function receipts(){var list=entries.slice(-8);var outstanding=entries.filter(function(x){return x.state!=='done';});list=outstanding.concat(list.filter(function(x){return x.state==='done';}));document.getElementById('queue').innerHTML=list.length?'<div class="queue-title">受付の記録</div>'+list.map(function(x){var r=x.result;var title=r&&r.name?esc(r.name)+' さん · '+esc(r.type||'')+(r.cooldown?'済み':''):('読み取り '+esc(x.number||''));var msg=x.state==='done'?'記録済み':x.state==='uncertain'?'記録を確認できません。受付で「再確認」を押してください。':x.state==='error'?esc(x.message):'読み取り済み · 記録を確認しています';return '<div class="receipt '+(x.state==='uncertain'||x.state==='error'?'error':'')+'"><div>'+title+'<small>'+msg+'</small></div>'+((x.state==='uncertain'||x.state==='error')?'<button data-retry="'+esc(x.id)+'">再確認</button>':'')+'</div>';}).join(''):'';}
+document.getElementById('queue').addEventListener('click',function(e){var id=e.target.getAttribute('data-retry');if(!id)return;var x=entries.find(function(x){return x.id===id;});if(x){x.state='queued';currentId=x.id;save();receipts();pump();}});
+function transport(x,cb){var finished=false,timer;function finish(r){if(finished)return;finished=true;clearTimeout(timer);cb(r);}
+ timer=setTimeout(function(){finish({uncertain:true,message:'通信の確認が必要です'});},20000);
+ if(isGas){google.script.run.withSuccessHandler(finish).withFailureHandler(function(){finish({uncertain:true});}).apiCheckin(getSecret(),x.code,x.id);return;}
+ var name='__seedAttendance'+(++_i),s=document.createElement('script');function cleanup(){if(s.parentNode)s.parentNode.removeChild(s);window[name]=function(){};setTimeout(function(){delete window[name];},60000);}
+ window[name]=function(r){cleanup();finish(r);};s.onerror=function(){cleanup();finish({uncertain:true});};s.referrerPolicy='no-referrer';s.src=EXEC_URL+'?'+new URLSearchParams({action:'checkin',code:x.code,secret:getSecret(),requestId:x.id,callback:name});document.body.appendChild(s);
+ setTimeout(cleanup,21000);
+}
+function showResult(x){var r=x.result;if(x.state!=='done'){state('error','受付で確認が必要です','記録を確認できません',x.state==='uncertain'?'スマホをかざし直す必要はありません。下の「再確認」で同じ記録を確認します。':esc(x.message));return;}var kind=r.type==='退室'?'out':'in';st.dataset.state=kind;st.innerHTML='<div class="label">'+(r.cooldown?'すでに記録済みです':'記録しました')+'</div><div class="name">'+esc(r.name)+'<small>さん</small></div><div class="action">'+esc(r.type)+(r.cooldown?'済み':'')+'</div><p class="detail">'+(r.type==='退室'?'おつかれさまでした。':'今日も、一歩ずつ。')+'</p>';}
+function pump(){if(sending)return;var x=entries.find(function(x){return x.state==='queued';});if(!x)return;sending=true;x.state='sending';save();receipts();transport(x,function(r){sending=false;if(r&&(r.ok||r.cooldown)){x.state='done';x.result=r;delete x.code;tone(880,90);}else{x.state=r&&r.uncertain?'uncertain':'error';x.message=r&&r.message||'通信の確認が必要です';tone(240,260);}save();receipts();if(currentId===x.id)showResult(x);pump();});}
+function submit(code){code=String(code||'').trim();if(!code)return;if(!getSecret()){document.getElementById('setup').hidden=false;state('error','端末の設定','ランチャーから<br>開き直してください','受付の設定を確認してください。');return;}
+ var key=code.toLowerCase(),pending=entries.find(function(x){return x.code&&x.code.toLowerCase()===key&&x.state!=='done';});if(pending){currentId=pending.id;if(pending.state==='uncertain'||pending.state==='error')showResult(pending);else state('read',tick,'スマホを下ろして<br>大丈夫です','読み取り済みです。そのまま記録を続けています。');return;}
+ var recent=entries.find(function(x){return x.key===key&&x.state==='done'&&Date.now()-x.at<60000;});if(recent){currentId=recent.id;showResult({state:'done',result:Object.assign({},recent.result,{cooldown:true})});return;}
+ var id=crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+'-'+Array.from(crypto.getRandomValues(new Uint32Array(4))).map(function(n){return n.toString(36);}).join('-');var x={id:id,code:code,key:key,at:Date.now(),number:entries.length+1,state:'queued'};entries.push(x);currentId=id;save();tone(660,40);state('read',tick,'スマホを下ろして<br>大丈夫です','入退室を記録しています。もう、かざす必要はありません。');receipts();pump();}
+function onDecoded(text){var code=String(text||'').trim();if(!code)return;var key=code.toLowerCase(),now=Date.now(),lastSeen=seen[key];seen[key]=now;if(lastSeen&&now-lastSeen<1800)return;submit(code);}
+document.getElementById('manual').addEventListener('submit',function(e){e.preventDefault();unlockAudio();var c=codeEl.value;codeEl.value='';submit(c);});
+var qr=null,starting=false,camStarted=false,camAttempt=0;
+function tuneTrack(){try{var v=document.querySelector('#reader video'),t=v&&v.srcObject&&v.srcObject.getVideoTracks()[0];if(t&&t.applyConstraints)t.applyConstraints({width:{ideal:1920},height:{ideal:1080},advanced:[{focusMode:'continuous'}]}).catch(function(){t.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(function(){});});}catch(e){}}
+function camError(){frameMsg.textContent='カメラを確認してください。手入力・USBスキャナも使えます。';if(!currentId)state('error','カメラを確認してください','カメラが応答していません','端末のカメラ許可を確認するか、手入力をご利用ください。');startBtn.hidden=false;startBtn.textContent=starting?'ページを開き直す':'カメラを開始';}
+function startCamera(){unlockAudio();if(starting){location.reload();return;}if(camStarted)return;starting=true;startBtn.hidden=true;var attempt=++camAttempt;frameMsg.textContent='カメラに接続しています';if(!currentId)state('preparing','準備中','カメラを準備しています','まだ、かざさずにお待ちください。');var watchdog=setTimeout(function(){if(attempt===camAttempt&&starting)camError();},6000);
+ try{if(!qr)qr=new Html5Qrcode('reader',{formatsToSupport:[Html5QrcodeSupportedFormats.QR_CODE],verbose:false});var cfg={fps:30,qrbox:function(w,h){var s=Math.min(600,Math.floor(Math.min(w,h)*.9));return{width:s,height:s};},disableFlip:true,experimentalFeatures:{useBarCodeDetectorIfSupported:true}};
+ var devices=Html5Qrcode.getCameras().catch(function(){return [];});devices.then(function(d){return qr.start(d&&d.length?d[d.length-1].id:{facingMode:'environment'},cfg,onDecoded,function(){});}).then(function(){clearTimeout(watchdog);starting=false;camStarted=true;startBtn.hidden=true;frameMsg.textContent='枠の中にQRをかざしてください';if(!currentId)ready();tuneTrack();}).catch(function(){clearTimeout(watchdog);starting=false;camError();});
+ }catch(e){clearTimeout(watchdog);starting=false;camError();}}
+startBtn.addEventListener('click',startCamera);receipts();
+window.addEventListener('beforeunload',function(e){if(entries.some(function(x){return x.state!=='done';})){e.preventDefault();e.returnValue='';}});
+if(getSecret())startCamera();else{document.getElementById('setup').hidden=false;frameMsg.textContent='端末の設定を確認してください';state('error','端末の設定','ランチャーから<br>開き直してください','設定すると、次回からそのまま使えます。');}
 </script>
-</body>
-</html>
+</body></html>
