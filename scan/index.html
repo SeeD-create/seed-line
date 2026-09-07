@@ -20,6 +20,8 @@
   button{font-size:17px;padding:13px 20px;border:0;border-radius:12px;background:#2E9E5B;color:#fff;margin:6px;cursor:pointer}
   .manual{margin-top:14px}
   .manual input{font-size:22px;padding:11px 14px;border-radius:10px;border:2px solid #2E9E5B;text-align:center;width:60%}
+  #setup{display:none;margin:14px 0;border-radius:16px;padding:20px;background:#3A1414;text-align:left;font-size:15px;line-height:1.7}
+  #setup b{color:#FFB4B4}
   a{color:#8BC34A;font-size:12px}
 </style>
 </head>
@@ -28,13 +30,20 @@
   <div class="hint">カードを枠の中にかざしてね</div>
   <div id="reader"></div>
   <div id="frameMsg"></div>
-  <button id="startBtn">▶ カメラを開始</button>
-  <div id="status"><div class="sub">「カメラを開始」を押して、カードをかざしてください</div></div>
+  <button id="startBtn" style="display:none">▶ カメラを開始</button>
+  <div id="status"><div class="sub">カメラを準備しています…</div></div>
+
+  <!-- 合言葉が入っていないPCで開いたときだけ出る案内。ここでも入力はさせない -->
+  <div id="setup">
+    <b>このパソコンは、まだ設定が済んでいません。</b><br>
+    塾ランチャーの「入退室スキャナ（カメラ版）」のリンクから開いてください。<br>
+    そのリンクを1回開けば、以後このパソコンでは何も入力せずに使えます。
+  </div>
+
   <div class="manual">
     <div class="sub">読めない時は手入力＋Enter（USBスキャナもここでOK）</div>
     <input id="code" autocomplete="off" placeholder="コード">
   </div>
-  <div style="margin-top:12px"><a href="#" id="resetLink">合言葉を再設定</a></div>
 </div>
 
 <script>
@@ -42,23 +51,52 @@
   // GAS本番デプロイの /exec URL（末尾 /exec まで。?以降は付けない）
   var EXEC_URL = "https://script.google.com/macros/s/AKfycbztDdOm_W6RlbxVj-TfG7zxjxhspaTkaGoDvY2qqy8o_enAMRWbtQi9RGNRyndZNLfE/exec";
   // ▲▲▲ ここまで ▲▲▲
+  // ⚠ 合言葉（ATTEND_SECRET）はここに書かない。このページは誰でも見られる公開ページなので、
+  //   書いた瞬間に誰でも打刻できてしまう。合言葉はブックマークURLの ?secret= から受け取り、
+  //   そのブラウザの localStorage にだけ置く（2026-09-07）。
 
   var st = document.getElementById('status');
   var frameMsg = document.getElementById('frameMsg');
   var codeEl = document.getElementById('code');
+  var startBtn = document.getElementById('startBtn');
+  var setupBox = document.getElementById('setup');
   var last = { code: null, t: 0 };
 
-  var PRESET = new URLSearchParams(location.search).get('secret') || '';
-  if (PRESET) localStorage.setItem('attendSecret', PRESET);
-  function getSecret() {
-    var s = PRESET || localStorage.getItem('attendSecret') || '';
-    if (!s) { s = prompt('スキャナの合言葉(ATTEND_SECRET)を入力してください') || ''; if (s) localStorage.setItem('attendSecret', s); }
-    return s;
+  // ── 合言葉 ──
+  // 受付で人に打たせない（prompt は使わない）。URLに付いていれば保存し、
+  // 次回以降はURL無しでも動く。保存できたらアドレスバーからは消す。
+  var PRESET = '';
+  try { PRESET = new URLSearchParams(location.search).get('secret') || ''; } catch (e) { PRESET = ''; }
+  if (PRESET) {
+    try { localStorage.setItem('attendSecret', PRESET); } catch (e) {}
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
   }
-  document.getElementById('resetLink').addEventListener('click', function (e) {
-    e.preventDefault(); localStorage.removeItem('attendSecret');
-    alert('合言葉をリセットしました。次の読み取り時に再入力します。');
-  });
+  function getSecret() {
+    if (PRESET) return PRESET;
+    try { return localStorage.getItem('attendSecret') || ''; } catch (e) { return ''; }
+  }
+
+  // ── 音（読み取れたことを音で返す。受付は画面を見ていないので音が要る）──
+  // AudioContext は最初のクリック/キー入力までブラウザが鳴らさないので、
+  // どこかを1回触った時点で解錠しておく。
+  var actx = null;
+  function unlockAudio() {
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      if (actx.state === 'suspended') actx.resume();
+    } catch (e) {}
+  }
+  document.addEventListener('click', unlockAudio, { once: true });
+  document.addEventListener('keydown', unlockAudio, { once: true });
+  function beep() {
+    try {
+      if (!actx) return;
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.frequency.value = 880; o.connect(g); g.connect(actx.destination);
+      g.gain.value = 0.18; o.start();
+      setTimeout(function () { o.stop(); }, 90);
+    } catch (e) {}
+  }
 
   // JSONP（<script>タグでGASを呼び、結果をコールバックで受ける＝CORS不要）
   var _i = 0;
@@ -76,7 +114,20 @@
   }
 
   function render(r) {
-    if (!r || !r.ok) { st.innerHTML = '<div class="big err">✕</div><div class="sub">' + ((r && r.message) || '通信に失敗しました') + '</div>'; return; }
+    if (r && r.cooldown) {
+      st.innerHTML = '<div class="big" style="color:#E2B852">⏳</div><div class="sub">' + r.message + '</div>';
+      return;
+    }
+    if (!r || !r.ok) {
+      var msg = (r && r.message) || '通信に失敗しました';
+      // 「認証エラー」は受付では意味が通らないので、やることに言い換える
+      if (msg === '認証エラー') {
+        msg = 'このパソコンの設定が古いようです。塾ランチャーのリンクから開き直してください。';
+        setupBox.style.display = 'block';
+      }
+      st.innerHTML = '<div class="big err">✕</div><div class="sub">' + msg + '</div>';
+      return;
+    }
     if (r.type === '入室') {
       st.innerHTML = '<div class="big in">🟢 入室</div><div class="sub">' + r.name + ' さん</div>';
     } else {
@@ -89,41 +140,90 @@
 
   function submit(code) {
     if (!code) return;
+    var sec = getSecret();
+    if (!sec) {
+      setupBox.style.display = 'block';
+      st.innerHTML = '<div class="big err">✕</div><div class="sub">設定が済んでいません（下の案内を見てね）</div>';
+      return;
+    }
     st.innerHTML = '<div class="sub">処理中…</div>';
-    jsonp({ action: 'checkin', code: code, secret: getSecret() }, render);
+    jsonp({ action: 'checkin', code: code, secret: sec }, render);
   }
 
   function onDecoded(text) {
     var now = Date.now();
     if (text === last.code && now - last.t < 4000) return; // 同コード4秒クールダウン
     last = { code: text, t: now };
+    beep();
     submit(String(text).trim());
   }
 
   function camErr(e) {
-    document.getElementById('startBtn').style.display = '';
-    frameMsg.innerHTML = '<span class="err">カメラを開けませんでした（' + ((e && e.message) ? e.message : e) + '）。下の手入力をご利用ください。</span>';
+    startBtn.style.display = '';
+    frameMsg.innerHTML = '<span class="err">カメラを開けませんでした（' + ((e && e.message) ? e.message : e) + '）。上のボタンを押すか、下の手入力をご利用ください。</span>';
+    st.innerHTML = '<div class="sub">カメラが使えないときは、下の欄にコードを入れてEnter</div>';
   }
 
-  document.getElementById('startBtn').addEventListener('click', function () {
-    this.style.display = 'none';
-    var qr = new Html5Qrcode('reader');
-    var cfg = { fps: 10, qrbox: { width: 250, height: 250 } };
+  /** 連続オートフォーカス。印刷カードは近距離なのでこれが無いとピントが合わない */
+  function tuneFocus() {
+    try {
+      var v = document.querySelector('#reader video');
+      if (!v || !v.srcObject) return;
+      var t = v.srcObject.getVideoTracks()[0];
+      if (t && t.applyConstraints) t.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function () {});
+    } catch (e) {}
+  }
+
+  // ── カメラ起動 ──
+  // 開いた時点で自動で始める。ボタンは自動起動に失敗したときだけ出す。
+  // 設定はGAS版（?page=checkin）と同じ：fps30・枠は動画の8割・反転探索なし・
+  // ブラウザ内蔵のBarcodeDetectorを使えるなら使う。fps10だと card をかざしても読めないことがある。
+  var camStarted = false;
+  function startCamera() {
+    if (camStarted) return;
+    camStarted = true;
+    startBtn.style.display = 'none';
+    unlockAudio();
+    var qr = new Html5Qrcode('reader', {
+      formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+      verbose: false
+    });
+    var qbox = function (vw, vh) {
+      var s = Math.min(440, Math.floor(Math.min(vw, vh) * 0.8));
+      return { width: s, height: s };
+    };
+    var cfg = {
+      fps: 30, qrbox: qbox, disableFlip: true,
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+    };
+    function ok() {
+      frameMsg.innerHTML = '📷 読み取り中…枠の中にカードをかざしてね';
+      st.innerHTML = '<div class="sub">カードをかざしてください</div>';
+      tuneFocus();
+    }
+    function fail(e) { camStarted = false; camErr(e); }
     Html5Qrcode.getCameras().then(function (devs) {
       var id = (devs && devs.length) ? devs[devs.length - 1].id : null;
-      qr.start(id || { facingMode: 'environment' }, cfg, onDecoded, function () {})
-        .then(function () { frameMsg.innerHTML = '📷 読み取り中…枠の中にカードをかざしてね'; })
-        .catch(camErr);
+      qr.start(id || { facingMode: 'environment' }, cfg, onDecoded, function () {}).then(ok).catch(fail);
     }).catch(function () {
-      qr.start({ facingMode: 'environment' }, cfg, onDecoded, function () {})
-        .then(function () { frameMsg.innerHTML = '📷 読み取り中…'; })
-        .catch(camErr);
+      qr.start({ facingMode: 'environment' }, cfg, onDecoded, function () {}).then(ok).catch(fail);
     });
-  });
+  }
+
+  startBtn.addEventListener('click', startCamera);
 
   codeEl.addEventListener('keydown', function (ev) {
     if (ev.key === 'Enter') { ev.preventDefault(); var c = codeEl.value.trim(); codeEl.value = ''; submit(c); }
   });
+
+  // 合言葉が無いPCではカメラを開かず、先に案内を出す（かざしても弾かれるだけなので）
+  if (getSecret()) {
+    startCamera();
+  } else {
+    setupBox.style.display = 'block';
+    frameMsg.textContent = '';
+    st.innerHTML = '<div class="sub">このパソコンは設定が済んでいません（下の案内を見てね）</div>';
+  }
 </script>
 </body>
 </html>
