@@ -67,9 +67,16 @@
   // 次回以降はURL無しでも動く。保存できたらアドレスバーからは消す。
   var PRESET = '';
   try { PRESET = new URLSearchParams(location.search).get('secret') || ''; } catch (e) { PRESET = ''; }
+  var presetSaved = false;
   if (PRESET) {
-    try { localStorage.setItem('attendSecret', PRESET); } catch (e) {}
-    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    // 保存できたことを読み戻して確かめる。保存できないブラウザ（プライベート等）で
+    // URLだけ消すと、再読み込みで設定を失う。
+    try {
+      localStorage.setItem('attendSecret', PRESET);
+      presetSaved = (localStorage.getItem('attendSecret') === PRESET);
+    } catch (e) { presetSaved = false; }
+    // 消すのは保存できたときだけ（受付モニタに合言葉を出しっぱなしにしない）
+    if (presetSaved) { try { history.replaceState(null, '', location.pathname); } catch (e) {} }
   }
   function getSecret() {
     if (PRESET) return PRESET;
@@ -88,14 +95,23 @@
   }
   document.addEventListener('click', unlockAudio, { once: true });
   document.addEventListener('keydown', unlockAudio, { once: true });
-  function beep() {
+  function tone(hz, ms) {
     try {
       if (!actx) return;
       var o = actx.createOscillator(), g = actx.createGain();
-      o.frequency.value = 880; o.connect(g); g.connect(actx.destination);
+      o.frequency.value = hz; o.connect(g); g.connect(actx.destination);
       g.gain.value = 0.18; o.start();
-      setTimeout(function () { o.stop(); }, 90);
+      setTimeout(function () { o.stop(); }, ms);
     } catch (e) {}
+  }
+  function beepOk() { tone(880, 90); }   // 打刻できた
+  function beepNg() { tone(240, 260); }  // 弾かれた（低く長い音で区別する）
+
+  /** サーバーが返す文字列には未登録QRの中身がそのまま混ざる。HTMLとして解釈させない */
+  function esc(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   // JSONP（<script>タグでGASを呼び、結果をコールバックで受ける＝CORS不要）
@@ -115,7 +131,7 @@
 
   function render(r) {
     if (r && r.cooldown) {
-      st.innerHTML = '<div class="big" style="color:#E2B852">⏳</div><div class="sub">' + r.message + '</div>';
+      st.innerHTML = '<div class="big" style="color:#E2B852">⏳</div><div class="sub">' + esc(r.message) + '</div>';
       return;
     }
     if (!r || !r.ok) {
@@ -125,16 +141,18 @@
         msg = 'このパソコンの設定が古いようです。塾ランチャーのリンクから開き直してください。';
         setupBox.style.display = 'block';
       }
-      st.innerHTML = '<div class="big err">✕</div><div class="sub">' + msg + '</div>';
+      beepNg();
+      st.innerHTML = '<div class="big err">✕</div><div class="sub">' + esc(msg) + '</div>';
       return;
     }
+    beepOk();
     if (r.type === '入室') {
-      st.innerHTML = '<div class="big in">🟢 入室</div><div class="sub">' + r.name + ' さん</div>';
+      st.innerHTML = '<div class="big in">🟢 入室</div><div class="sub">' + esc(r.name) + ' さん</div>';
     } else {
       var p = r.awarded > 0
-        ? '<div class="pt">自習pt +' + r.awarded + ' / 残高' + r.balance + 'pt</div>'
-        : '<div class="sub">滞在' + r.minutes + '分（加点は60分以上）</div>';
-      st.innerHTML = '<div class="big out">🔵 退室</div><div class="sub">' + r.name + ' さん（滞在' + r.minutes + '分）</div>' + p;
+        ? '<div class="pt">自習pt +' + esc(r.awarded) + ' / 残高' + esc(r.balance) + 'pt</div>'
+        : '<div class="sub">滞在' + esc(r.minutes) + '分（加点は60分以上）</div>';
+      st.innerHTML = '<div class="big out">🔵 退室</div><div class="sub">' + esc(r.name) + ' さん（滞在' + esc(r.minutes) + '分）</div>' + p;
     }
   }
 
@@ -154,7 +172,6 @@
     var now = Date.now();
     if (text === last.code && now - last.t < 4000) return; // 同コード4秒クールダウン
     last = { code: text, t: now };
-    beep();
     submit(String(text).trim());
   }
 
