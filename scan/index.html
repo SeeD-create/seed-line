@@ -69,7 +69,7 @@ function tone(hz,ms){try{if(!actx||actx.state!=='running')return;var o=actx.crea
 var tick='<span class="check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>読み取りました</span>';
 var resultTimer=null,resultDisplayVersion=0;
 function clearResultTimer(){resultDisplayVersion++;if(resultTimer!==null){clearTimeout(resultTimer);resultTimer=null;}}
-function dismissResultAfterDelay(){var version=resultDisplayVersion,receiptId=currentId;resultTimer=setTimeout(function(){if(version!==resultDisplayVersion||currentId!==receiptId)return;resultTimer=null;currentId=null;ready();},1000);}
+function dismissResultAfterDelay(){var version=resultDisplayVersion,receiptId=currentId;resultTimer=setTimeout(function(){if(version!==resultDisplayVersion||currentId!==receiptId)return;resultTimer=null;currentId=null;ready();},2000);}
 function state(kind,label,title,detail){clearResultTimer();st.dataset.state=kind;st.innerHTML='<div class="label">'+label+'</div><h1 class="title">'+title+'</h1><p class="detail">'+detail+'</p>';}
 function ready(){state('ready','受付中','QRをかざしてください','読み取れたら、すぐにお知らせします。');}
 var entries=[],currentId=null,sending=false,seen=Object.create(null),_i=0;
