@@ -34,6 +34,28 @@ main{max-width:none;padding:0}.eyebrow{display:none}.layout{display:block}
 .camera-controls{position:absolute;bottom:14px;left:24px;right:24px;display:flex;gap:12px;align-items:center;z-index:3}#frameMsg{margin:0;background:#071b16c9;border-radius:8px;padding:6px 10px;color:#e6f2eb}#startBtn{width:auto;margin:0;flex-shrink:0}
 .tools-panel{max-width:900px;margin:0 auto;padding:16px 24px 24px}.manual{margin-top:10px}#setup{margin:0;border-radius:0;padding:12px 24px}footer{padding:0 24px 20px}
 @media(max-width:760px){header{height:64px;padding:8px 16px}header img{width:40px;height:40px}.camera{height:calc(100vh - 64px);height:calc(100svh - 64px);min-height:360px}#reader{max-width:calc((100svh - 64px)*var(--video-aspect,1.777778))}.camera-head{left:12px;right:12px;top:12px;font-size:11px}.camera-head span:last-child{display:none}.scan-overlay{left:12px;bottom:74px;width:calc(100% - 24px)}#status{padding:16px 20px;border-radius:14px}#status .detail{font-size:13px}.camera-controls{left:12px;right:12px;bottom:12px;flex-wrap:wrap;gap:6px}#frameMsg{font-size:12px}.tools-panel{padding:10px 16px 20px}}
+/* Local pixel-art mascot: no image download or animation library required. */
+#status.has-mascot{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:14px;align-items:center}
+.status-copy{min-width:0}.tanemaki-effect{position:relative;width:112px;height:142px;align-self:center;pointer-events:none}
+.tanemaki-sprite{position:absolute;width:96px;height:108px;left:8px;top:12px;image-rendering:pixelated;transform-origin:50% 90%;filter:drop-shadow(0 3px 0 #163c3812)}
+.tanemaki-shadow{position:absolute;width:56px;height:8px;left:28px;bottom:18px;background:#163c3826;clip-path:polygon(10% 0,90% 0,90% 25%,100% 25%,100% 75%,90% 75%,90% 100%,10% 100%,10% 75%,0 75%,0 25%,10% 25%)}
+.tanemaki-dots{position:absolute;bottom:0;left:0;width:100%;display:flex;justify-content:center;gap:7px}.tanemaki-dots i{width:5px;height:5px;background:currentColor;animation:tanemaki-dot 1.2s steps(2,end) infinite}.tanemaki-dots i:nth-child(2){animation-delay:.2s}.tanemaki-dots i:nth-child(3){animation-delay:.4s}
+.tanemaki-effect[data-effect="loading"] .tanemaki-sprite{animation:tanemaki-wait 1.25s steps(6,end) infinite}
+.tanemaki-effect[data-effect="loading"] .tanemaki-leaf{transform-origin:18px 13px;animation:tanemaki-leaf 1.25s steps(4,end) infinite}
+.tanemaki-effect[data-effect="welcome"] .tanemaki-sprite{animation:tanemaki-jump .75s steps(8,end) 2}
+.tanemaki-effect[data-effect="welcome"] .tanemaki-shadow{animation:tanemaki-shadow .75s steps(8,end) 2}
+.tanemaki-spark{position:absolute;width:12px;height:12px;background:#dcae39;clip-path:polygon(33% 0,66% 0,66% 33%,100% 33%,100% 66%,66% 66%,66% 100%,33% 100%,33% 66%,0 66%,0 33%,33% 33%);opacity:0;animation:tanemaki-spark 1.6s steps(6,end) forwards}
+.tanemaki-spark.s1{left:0;top:30px}.tanemaki-spark.s2{right:0;top:15px;animation-delay:.15s;background:#50a269}.tanemaki-spark.s3{right:4px;bottom:26px;animation-delay:.3s}
+#status[data-state="camera-wait"]{background:#071b16c9;color:#fff;border-color:#ffffff38;box-shadow:none}#status[data-state="camera-wait"] .detail{color:#d6e9dd}
+@keyframes tanemaki-wait{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-5px) rotate(2deg)}}
+@keyframes tanemaki-leaf{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(6deg)}}
+@keyframes tanemaki-dot{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+@keyframes tanemaki-jump{0%,100%{transform:translateY(0)}16%{transform:translateY(3px) scale(1.05,.94)}48%{transform:translateY(-18px) rotate(-5deg)}72%{transform:translateY(-6px) rotate(4deg)}}
+@keyframes tanemaki-shadow{0%,100%{transform:scaleX(1);opacity:.65}48%{transform:scaleX(.7);opacity:.3}}
+@keyframes tanemaki-spark{0%{opacity:0;transform:translateY(10px) scale(.5)}25%,55%{opacity:1}100%{opacity:0;transform:translateY(-18px) scale(1.1)}}
+@media(max-width:760px){#status.has-mascot{grid-template-columns:minmax(0,1fr) 76px;gap:8px}.tanemaki-effect{width:76px;height:108px}.tanemaki-sprite{width:72px;height:81px;left:2px;top:8px}.tanemaki-shadow{width:44px;left:16px;bottom:14px}.tanemaki-spark{width:9px;height:9px}#status.has-mascot .name{font-size:clamp(24px,6vw,38px)}#status.has-mascot .action{font-size:clamp(28px,7vw,44px)}}
+@media(prefers-reduced-motion:reduce){.tanemaki-effect *{animation:none!important;transition:none!important}.tanemaki-dots i{opacity:.7}.tanemaki-effect[data-effect="welcome"] .tanemaki-spark{opacity:.8}}
+
 </style>
 </head>
 <body>
@@ -70,13 +92,34 @@ var tick='<span class="check"><svg viewBox="0 0 24 24" aria-hidden="true"><path 
 var resultTimer=null,resultDisplayVersion=0;
 function clearResultTimer(){resultDisplayVersion++;if(resultTimer!==null){clearTimeout(resultTimer);resultTimer=null;}}
 function dismissResultAfterDelay(){var version=resultDisplayVersion,receiptId=currentId;resultTimer=setTimeout(function(){if(version!==resultDisplayVersion||currentId!==receiptId)return;resultTimer=null;currentId=null;ready();},2000);}
-function state(kind,label,title,detail){clearResultTimer();st.dataset.state=kind;st.innerHTML='<div class="label">'+label+'</div><h1 class="title">'+title+'</h1><p class="detail">'+detail+'</p>';}
+// An original code-native pixel sprite based on SeeD's white, single-leaf mascot.
+function tanemakiPixelMarkup(effect){
+  var sprite='<svg class="tanemaki-sprite" viewBox="0 0 32 36" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" focusable="false">'+
+    '<g class="tanemaki-leaf"><path fill="#354432" d="M17 13V8h2V6h2V4h3V2h5v5h-1v3h-2v2h-4v2z"/>'+
+    '<path fill="#65b74e" d="M19 11V8h2V6h3V4h3v3h-1v2h-3v2z"/><path fill="#a2d46c" d="M21 7V6h3V4h3v1h-3v2z"/><path fill="#3e8a46" d="M18 12h2v-2h2V8h2V6h2v1h-1v2h-2v2h-3v2h-2z"/></g>'+
+    '<path fill="#3e332b" d="M8 31h6v3h-2v1H7v-2h1zm13 0h5v2h2v2h-6v-1h-1z"/><path fill="#fffdf5" d="M9 32h3v1h-1v1H8v-1h1zm14 0h2v1h1v1h-3z"/>'+
+    '<path fill="#3e332b" d="M9 12h13v1h3v2h2v3h1v3h-1v7h-2v3h-3v2H9v-1H6v-3H4V18h1v-3h2v-2h2z"/>'+
+    '<path fill="#fffdf5" d="M10 13h11v1h3v2h2v5h-1v7h-2v3h-3v1H10v-1H7v-3H5V19h1v-3h2v-2h2z"/>'+
+    '<path fill="#e6ede3" d="M5 24h1v4h2v2h3v1h9v-1h3v-2h2v-4h1v5h-2v2h-3v1H9v-1H7v-2H5z"/>'+
+    '<path fill="#3e332b" d="M5 22H3v1H2v2H1v3h3v-1h2v-3h1v-2zm21-4h2v-2h2v-1h2v5h-2v2h-4z"/>'+
+    '<path fill="#fffdf5" d="M5 23H4v1H3v2H2v1h1v-1h2v-2h1v-1zm21-3h2v-2h2v-1h1v2h-2v2h-3z"/>'+
+    '<path fill="#3e332b" d="M11 20h2v2h-2zm9 0h2v2h-2zM13 24h2v1h4v-1h2v2h-2v1h-4v-1h-2z"/>'+ 
+    '<path fill="#efc8ab" d="M9 23h2v1H9zm13 0h2v1h-2z"/></svg>';
+  return '<div class="tanemaki-effect" data-effect="'+effect+'" aria-hidden="true"><span class="tanemaki-shadow"></span>'+sprite+
+    (effect==='loading'?'<span class="tanemaki-dots"><i></i><i></i><i></i></span>':'<span class="tanemaki-spark s1"></span><span class="tanemaki-spark s2"></span><span class="tanemaki-spark s3"></span>')+'</div>';
+}
+function decorateAttendanceStatus(effect){
+  st.classList.toggle('has-mascot',!!effect);
+  if(effect)st.innerHTML='<div class="status-copy">'+st.innerHTML+'</div>'+tanemakiPixelMarkup(effect);
+}
+
+function state(kind,label,title,detail){clearResultTimer();st.dataset.state=kind;st.innerHTML='<div class="label">'+label+'</div><h1 class="title">'+title+'</h1><p class="detail">'+detail+'</p>';decorateAttendanceStatus(kind==='preparing'||kind==='read'?'loading':'');}
 function ready(){state('ready','受付中','QRをかざしてください','読み取れたら、すぐにお知らせします。');}
 var entries=[],currentId=null,sending=false,seen=Object.create(null),_i=0;
 try{entries=JSON.parse(sessionStorage.getItem('seedAttendanceOutbox')||'[]').filter(function(x){return x&&typeof x.code==='string'&&/^[\w-]{16,80}$/.test(x.id);}).map(function(x){return{id:x.id,code:x.code,state:'uncertain'};});}catch(e){entries=[];}
 function save(){try{sessionStorage.setItem('seedAttendanceOutbox',JSON.stringify(entries.filter(function(x){return x.state!=='done';}).map(function(x){return {id:x.id,code:x.code};})));}catch(e){}}
 function receipts(){var list=entries.slice(-8);var outstanding=entries.filter(function(x){return x.state!=='done';});list=outstanding.concat(list.filter(function(x){return x.state==='done';}));document.getElementById('queue').innerHTML=list.length?'<div class="queue-title">受付の記録</div>'+list.map(function(x){var r=x.result;var title=r&&r.name?esc(r.name)+' さん · '+esc(r.type||'')+(r.cooldown?'済み':''):('読み取り '+esc(x.number||''));var msg=x.state==='done'?'記録済み':x.state==='uncertain'?'受付で再確認':x.state==='error'?'受付で再確認':'読み取り済み · 記録を確認しています';return '<div class="receipt '+''+'"><div>'+title+'<small>'+msg+'</small></div>'+((x.state==='uncertain'||x.state==='error')?'<button data-retry="'+esc(x.id)+'">再確認</button>':'')+'</div>';}).join(''):'';}
-document.getElementById('queue').addEventListener('click',function(e){var id=e.target.getAttribute('data-retry');if(!id)return;var x=entries.find(function(x){return x.id===id;});if(x){clearResultTimer();x.state='queued';currentId=x.id;save();receipts();pump();}});
+document.getElementById('queue').addEventListener('click',function(e){var id=e.target.getAttribute('data-retry');if(!id)return;var x=entries.find(function(x){return x.id===id;});if(x){clearResultTimer();x.state='queued';currentId=x.id;save();receipts();state('read',tick,'記録を確認しています','もう一度QRをかざす必要はありません。');pump();}});
 function transport(x,cb){var finished=false,timer;function finish(r){if(finished)return;finished=true;clearTimeout(timer);cb(r);}
  timer=setTimeout(function(){finish({uncertain:true,message:'通信の確認が必要です'});},20000);
  if(isGas){google.script.run.withSuccessHandler(finish).withFailureHandler(function(){finish({uncertain:true});}).apiCheckin(getSecret(),x.code,x.id);return;}
@@ -84,7 +127,7 @@ function transport(x,cb){var finished=false,timer;function finish(r){if(finished
  window[name]=function(r){cleanup();finish(r);};s.onerror=function(){cleanup();finish({uncertain:true});};s.referrerPolicy='no-referrer';s.src=EXEC_URL+'?'+new URLSearchParams({action:'checkin',code:x.code,secret:getSecret(),requestId:x.id,callback:name});document.body.appendChild(s);
  setTimeout(cleanup,21000);
 }
-function showResult(x){clearResultTimer();var r=x.result;if(x.state!=='done'){currentId=null;ready();return;}var kind=r.type==='退室'?'out':'in';st.dataset.state=kind;st.innerHTML='<div class="label">'+(r.cooldown?'すでに記録済みです':'記録しました')+'</div><div class="name">'+esc(r.name)+'<small>さん</small></div><div class="action">'+esc(r.type)+(r.cooldown?'済み':'完了')+'</div><p class="detail">'+(r.type==='退室'?'おつかれさまでした。':'今日も、一歩ずつ。')+'</p>';dismissResultAfterDelay();}
+function showResult(x){clearResultTimer();var r=x.result;if(x.state!=='done'){currentId=null;ready();return;}var kind=r.type==='退室'?'out':'in';st.dataset.state=kind;st.innerHTML='<div class="label">'+(r.cooldown?'すでに記録済みです':'記録しました')+'</div><div class="name">'+esc(r.name)+'<small>さん</small></div><div class="action">'+esc(r.type)+(r.cooldown?'済み':'完了')+'</div><p class="detail">'+(r.type==='退室'?'おつかれさまでした。':'今日も、一歩ずつ。')+'</p>';decorateAttendanceStatus(r.type==='入室'&&!r.cooldown?'welcome':'');dismissResultAfterDelay();}
 function pump(){if(sending)return;var x=entries.find(function(x){return x.state==='queued';});if(!x)return;sending=true;x.state='sending';save();receipts();transport(x,function(r){sending=false;if(r&&(r.ok||r.cooldown)){x.state='done';x.result=r;delete x.code;tone(880,90);}else{x.state=r&&r.uncertain?'uncertain':'error';x.message=r&&r.message||'通信の確認が必要です';}save();receipts();if(currentId===x.id)showResult(x);pump();});}
 function submit(code){code=String(code||'').trim();if(!code)return;if(!getSecret()){document.getElementById('setup').hidden=false;state('error','端末の設定','ランチャーから<br>開き直してください','受付の設定を確認してください。');return;}
  var key=code.toLowerCase(),pending=entries.find(function(x){return x.code&&x.code.toLowerCase()===key&&x.state!=='done';});if(pending){currentId=pending.id;if(pending.state==='uncertain'||pending.state==='error'){pending.state='queued';save();receipts();tone(660,40);state('read',tick,'読み取り完了 ✓','同じ受付の記録を確認しています。もう、かざす必要はありません。');pump();}else state('read',tick,'読み取り完了 ✓','読み取り済みです。そのまま記録を続けています。');return;}
@@ -94,7 +137,7 @@ function onDecoded(text){var code=String(text||'').trim();if(!code)return;var ke
 document.getElementById('manual').addEventListener('submit',function(e){e.preventDefault();unlockAudio();var c=codeEl.value;codeEl.value='';submit(c);});
 var qr=null,starting=false,camStarted=false,camAttempt=0;
 function tuneTrack(){try{var v=document.querySelector('#reader video');if(v){var fit=function(){if(v.videoWidth&&v.videoHeight)document.getElementById('reader').style.setProperty('--video-aspect',String(v.videoWidth/v.videoHeight));};v.addEventListener('resize',fit);fit();}var t=v&&v.srcObject&&v.srcObject.getVideoTracks()[0];if(t&&t.applyConstraints)t.applyConstraints({width:{ideal:1920},height:{ideal:1080},advanced:[{focusMode:'continuous'}]}).catch(function(){t.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(function(){});});}catch(e){}}
-function camError(){frameMsg.textContent='手入力・USBスキャナも使えます';if(!currentId)state('preparing','カメラの準備','カメラを開始してください','下のボタンから開始できます。');startBtn.hidden=false;startBtn.textContent=starting?'ページを開き直す':'カメラを開始';}
+function camError(){frameMsg.textContent='手入力・USBスキャナも使えます';if(!currentId)state('camera-wait','カメラの準備','カメラを開始してください','下のボタンから開始できます。');startBtn.hidden=false;startBtn.textContent=starting?'ページを開き直す':'カメラを開始';}
 function startCamera(){unlockAudio();if(starting){location.reload();return;}if(camStarted)return;starting=true;startBtn.hidden=true;var attempt=++camAttempt;frameMsg.textContent='カメラに接続しています';if(!currentId)state('preparing','準備中','カメラを準備しています','まだ、かざさずにお待ちください。');var watchdog=setTimeout(function(){if(attempt===camAttempt&&starting)camError();},6000);
  try{if(!qr)qr=new Html5Qrcode('reader',{formatsToSupport:[Html5QrcodeSupportedFormats.QR_CODE],verbose:false});var cfg={fps:30,disableFlip:true,experimentalFeatures:{useBarCodeDetectorIfSupported:true}};
  var devices=Html5Qrcode.getCameras().catch(function(){return [];});devices.then(function(d){return qr.start(d&&d.length?d[d.length-1].id:{facingMode:'environment'},cfg,onDecoded,function(){});}).then(function(){clearTimeout(watchdog);starting=false;camStarted=true;startBtn.hidden=true;frameMsg.textContent='カメラにQRをかざしてください';if(!currentId)ready();tuneTrack();}).catch(function(){clearTimeout(watchdog);starting=false;camError();});
