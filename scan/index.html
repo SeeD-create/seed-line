@@ -34,6 +34,21 @@ main{max-width:none;padding:0}.eyebrow{display:none}.layout{display:block}
 .camera-controls{position:absolute;bottom:14px;left:24px;right:24px;display:flex;gap:12px;align-items:center;z-index:3}#frameMsg{margin:0;background:#071b16c9;border-radius:8px;padding:6px 10px;color:#e6f2eb}#startBtn{width:auto;margin:0;flex-shrink:0}
 .tools-panel{max-width:900px;margin:0 auto;padding:16px 24px 24px}.manual{margin-top:10px}#setup{margin:0;border-radius:0;padding:12px 24px}footer{padding:0 24px 20px}
 @media(max-width:760px){header{height:64px;padding:8px 16px}header img{width:40px;height:40px}.camera{height:calc(100vh - 64px);height:calc(100svh - 64px);min-height:360px}#reader{max-width:calc((100svh - 64px)*var(--video-aspect,1.777778))}.camera-head{left:12px;right:12px;top:12px;font-size:11px}.camera-head span:last-child{display:none}.scan-overlay{left:12px;bottom:74px;width:calc(100% - 24px)}#status{padding:16px 20px;border-radius:14px}#status .detail{font-size:13px}.camera-controls{left:12px;right:12px;bottom:12px;flex-wrap:wrap;gap:6px}#frameMsg{font-size:12px}.tools-panel{padding:10px 16px 20px}}
+/* Picture-book walk, clipped inside the status card. */
+#status.has-mascot .status-copy{min-width:0}
+.tanemaki-lane{position:relative;overflow:hidden;width:100%;height:70px;margin-top:4px;pointer-events:none}
+.tanemaki-walker{position:absolute;bottom:0;width:64px;height:64px;left:-64px}
+.tanemaki-sprite{display:block;width:64px;height:64px;background-image:url('https://seed-create.github.io/seed-line/scan/assets/tanemaki-storybook-walk-v1.png');background-size:200% 200%;background-repeat:no-repeat;animation:tanemaki-frames .64s steps(1,end) infinite}
+.tanemaki-lane[data-effect="loading"] .tanemaki-walker{animation:tanemaki-walk 3.8s linear infinite}
+.tanemaki-lane[data-effect="welcome"] .tanemaki-walker{animation:tanemaki-run .85s ease-in forwards}
+.tanemaki-lane[data-effect="welcome"] .tanemaki-sprite{animation-duration:.32s}
+@keyframes tanemaki-frames{0%{background-position:0 0}25%{background-position:100% 0}50%{background-position:0 100%}75%{background-position:100% 100%}}
+@keyframes tanemaki-walk{from{left:-64px}to{left:100%}}
+@keyframes tanemaki-run{from{left:var(--walk-start,30%)}to{left:100%}}
+#status[data-state="camera-wait"]{background:#071b16c9;color:#fff;border-color:#ffffff38;box-shadow:none}
+#status[data-state="camera-wait"] .detail{color:#d6e9dd}
+@media(prefers-reduced-motion:reduce){.tanemaki-lane *{animation:none!important}.tanemaki-walker{left:calc(50% - 32px)}.tanemaki-lane[data-effect="welcome"] .tanemaki-walker{visibility:hidden}}
+
 </style>
 </head>
 <body>
@@ -70,13 +85,28 @@ var tick='<span class="check"><svg viewBox="0 0 24 24" aria-hidden="true"><path 
 var resultTimer=null,resultDisplayVersion=0;
 function clearResultTimer(){resultDisplayVersion++;if(resultTimer!==null){clearTimeout(resultTimer);resultTimer=null;}}
 function dismissResultAfterDelay(){var version=resultDisplayVersion,receiptId=currentId;resultTimer=setTimeout(function(){if(version!==resultDisplayVersion||currentId!==receiptId)return;resultTimer=null;currentId=null;ready();},2000);}
-function state(kind,label,title,detail){clearResultTimer();st.dataset.state=kind;st.innerHTML='<div class="label">'+label+'</div><h1 class="title">'+title+'</h1><p class="detail">'+detail+'</p>';}
+// Picture-book Tanemaki, four walking frames; decorative, no attendance API.
+var tanemakiWalkStarted=0;
+function decorateAttendanceStatus(effect){
+  st.classList.toggle('has-mascot',!!effect);
+  if(!effect){tanemakiWalkStarted=0;return;}
+  if(effect==='loading'&&!tanemakiWalkStarted)tanemakiWalkStarted=Date.now();
+  st.innerHTML='<div class="status-copy">'+st.innerHTML+'</div><div class="tanemaki-lane" data-effect="'+effect+'" aria-hidden="true"><span class="tanemaki-walker"><span class="tanemaki-sprite"></span></span></div>';
+  if(effect==='welcome'){
+    var lane=st.querySelector('.tanemaki-lane');
+    var phase=tanemakiWalkStarted?((Date.now()-tanemakiWalkStarted)%3800)/3800:.3;
+    lane.style.setProperty('--walk-start',(-64+phase*(lane.clientWidth+64))+'px');
+    tanemakiWalkStarted=0;
+  }
+}
+
+function state(kind,label,title,detail){clearResultTimer();st.dataset.state=kind;st.innerHTML='<div class="label">'+label+'</div><h1 class="title">'+title+'</h1><p class="detail">'+detail+'</p>';decorateAttendanceStatus(kind==='preparing'||kind==='read'?'loading':'');}
 function ready(){state('ready','受付中','QRをかざしてください','読み取れたら、すぐにお知らせします。');}
 var entries=[],currentId=null,sending=false,seen=Object.create(null),_i=0;
 try{entries=JSON.parse(sessionStorage.getItem('seedAttendanceOutbox')||'[]').filter(function(x){return x&&typeof x.code==='string'&&/^[\w-]{16,80}$/.test(x.id);}).map(function(x){return{id:x.id,code:x.code,state:'uncertain'};});}catch(e){entries=[];}
 function save(){try{sessionStorage.setItem('seedAttendanceOutbox',JSON.stringify(entries.filter(function(x){return x.state!=='done';}).map(function(x){return {id:x.id,code:x.code};})));}catch(e){}}
 function receipts(){var list=entries.slice(-8);var outstanding=entries.filter(function(x){return x.state!=='done';});list=outstanding.concat(list.filter(function(x){return x.state==='done';}));document.getElementById('queue').innerHTML=list.length?'<div class="queue-title">受付の記録</div>'+list.map(function(x){var r=x.result;var title=r&&r.name?esc(r.name)+' さん · '+esc(r.type||'')+(r.cooldown?'済み':''):('読み取り '+esc(x.number||''));var msg=x.state==='done'?'記録済み':x.state==='uncertain'?'受付で再確認':x.state==='error'?'受付で再確認':'読み取り済み · 記録を確認しています';return '<div class="receipt '+''+'"><div>'+title+'<small>'+msg+'</small></div>'+((x.state==='uncertain'||x.state==='error')?'<button data-retry="'+esc(x.id)+'">再確認</button>':'')+'</div>';}).join(''):'';}
-document.getElementById('queue').addEventListener('click',function(e){var id=e.target.getAttribute('data-retry');if(!id)return;var x=entries.find(function(x){return x.id===id;});if(x){clearResultTimer();x.state='queued';currentId=x.id;save();receipts();pump();}});
+document.getElementById('queue').addEventListener('click',function(e){var id=e.target.getAttribute('data-retry');if(!id)return;var x=entries.find(function(x){return x.id===id;});if(x){clearResultTimer();x.state='queued';currentId=x.id;save();receipts();state('read',tick,'記録を確認しています','もう一度QRをかざす必要はありません。');pump();}});
 function transport(x,cb){var finished=false,timer;function finish(r){if(finished)return;finished=true;clearTimeout(timer);cb(r);}
  timer=setTimeout(function(){finish({uncertain:true,message:'通信の確認が必要です'});},20000);
  if(isGas){google.script.run.withSuccessHandler(finish).withFailureHandler(function(){finish({uncertain:true});}).apiCheckin(getSecret(),x.code,x.id);return;}
@@ -84,7 +114,7 @@ function transport(x,cb){var finished=false,timer;function finish(r){if(finished
  window[name]=function(r){cleanup();finish(r);};s.onerror=function(){cleanup();finish({uncertain:true});};s.referrerPolicy='no-referrer';s.src=EXEC_URL+'?'+new URLSearchParams({action:'checkin',code:x.code,secret:getSecret(),requestId:x.id,callback:name});document.body.appendChild(s);
  setTimeout(cleanup,21000);
 }
-function showResult(x){clearResultTimer();var r=x.result;if(x.state!=='done'){currentId=null;ready();return;}var kind=r.type==='退室'?'out':'in';st.dataset.state=kind;st.innerHTML='<div class="label">'+(r.cooldown?'すでに記録済みです':'記録しました')+'</div><div class="name">'+esc(r.name)+'<small>さん</small></div><div class="action">'+esc(r.type)+(r.cooldown?'済み':'完了')+'</div><p class="detail">'+(r.type==='退室'?'おつかれさまでした。':'今日も、一歩ずつ。')+'</p>';dismissResultAfterDelay();}
+function showResult(x){clearResultTimer();var r=x.result;if(x.state!=='done'){currentId=null;ready();return;}var kind=r.type==='退室'?'out':'in';st.dataset.state=kind;st.innerHTML='<div class="label">'+(r.cooldown?'すでに記録済みです':'記録しました')+'</div><div class="name">'+esc(r.name)+'<small>さん</small></div><div class="action">'+esc(r.type)+(r.cooldown?'済み':'完了')+'</div><p class="detail">'+(r.type==='退室'?'おつかれさまでした。':'今日も、一歩ずつ。')+'</p>';decorateAttendanceStatus(r.type==='入室'&&!r.cooldown?'welcome':'');dismissResultAfterDelay();}
 function pump(){if(sending)return;var x=entries.find(function(x){return x.state==='queued';});if(!x)return;sending=true;x.state='sending';save();receipts();transport(x,function(r){sending=false;if(r&&(r.ok||r.cooldown)){x.state='done';x.result=r;delete x.code;tone(880,90);}else{x.state=r&&r.uncertain?'uncertain':'error';x.message=r&&r.message||'通信の確認が必要です';}save();receipts();if(currentId===x.id)showResult(x);pump();});}
 function submit(code){code=String(code||'').trim();if(!code)return;if(!getSecret()){document.getElementById('setup').hidden=false;state('error','端末の設定','ランチャーから<br>開き直してください','受付の設定を確認してください。');return;}
  var key=code.toLowerCase(),pending=entries.find(function(x){return x.code&&x.code.toLowerCase()===key&&x.state!=='done';});if(pending){currentId=pending.id;if(pending.state==='uncertain'||pending.state==='error'){pending.state='queued';save();receipts();tone(660,40);state('read',tick,'読み取り完了 ✓','同じ受付の記録を確認しています。もう、かざす必要はありません。');pump();}else state('read',tick,'読み取り完了 ✓','読み取り済みです。そのまま記録を続けています。');return;}
@@ -94,7 +124,7 @@ function onDecoded(text){var code=String(text||'').trim();if(!code)return;var ke
 document.getElementById('manual').addEventListener('submit',function(e){e.preventDefault();unlockAudio();var c=codeEl.value;codeEl.value='';submit(c);});
 var qr=null,starting=false,camStarted=false,camAttempt=0;
 function tuneTrack(){try{var v=document.querySelector('#reader video');if(v){var fit=function(){if(v.videoWidth&&v.videoHeight)document.getElementById('reader').style.setProperty('--video-aspect',String(v.videoWidth/v.videoHeight));};v.addEventListener('resize',fit);fit();}var t=v&&v.srcObject&&v.srcObject.getVideoTracks()[0];if(t&&t.applyConstraints)t.applyConstraints({width:{ideal:1920},height:{ideal:1080},advanced:[{focusMode:'continuous'}]}).catch(function(){t.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(function(){});});}catch(e){}}
-function camError(){frameMsg.textContent='手入力・USBスキャナも使えます';if(!currentId)state('preparing','カメラの準備','カメラを開始してください','下のボタンから開始できます。');startBtn.hidden=false;startBtn.textContent=starting?'ページを開き直す':'カメラを開始';}
+function camError(){frameMsg.textContent='手入力・USBスキャナも使えます';if(!currentId)state('camera-wait','カメラの準備','カメラを開始してください','下のボタンから開始できます。');startBtn.hidden=false;startBtn.textContent=starting?'ページを開き直す':'カメラを開始';}
 function startCamera(){unlockAudio();if(starting){location.reload();return;}if(camStarted)return;starting=true;startBtn.hidden=true;var attempt=++camAttempt;frameMsg.textContent='カメラに接続しています';if(!currentId)state('preparing','準備中','カメラを準備しています','まだ、かざさずにお待ちください。');var watchdog=setTimeout(function(){if(attempt===camAttempt&&starting)camError();},6000);
  try{if(!qr)qr=new Html5Qrcode('reader',{formatsToSupport:[Html5QrcodeSupportedFormats.QR_CODE],verbose:false});var cfg={fps:30,disableFlip:true,experimentalFeatures:{useBarCodeDetectorIfSupported:true}};
  var devices=Html5Qrcode.getCameras().catch(function(){return [];});devices.then(function(d){return qr.start(d&&d.length?d[d.length-1].id:{facingMode:'environment'},cfg,onDecoded,function(){});}).then(function(){clearTimeout(watchdog);starting=false;camStarted=true;startBtn.hidden=true;frameMsg.textContent='カメラにQRをかざしてください';if(!currentId)ready();tuneTrack();}).catch(function(){clearTimeout(watchdog);starting=false;camError();});
