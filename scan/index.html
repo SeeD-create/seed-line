@@ -49,6 +49,25 @@ main{max-width:none;padding:0}.eyebrow{display:none}.layout{display:block}
 #status[data-state="camera-wait"] .detail{color:#d6e9dd}
 @media(prefers-reduced-motion:reduce){.tanemaki-lane *{animation:none!important}.tanemaki-walker{left:calc(50% - 40px)}.tanemaki-lane[data-effect="welcome"] .tanemaki-walker{visibility:hidden}}
 
+/* Tanemaki: gentle bounce, drifting leaves and tiny footsteps. */
+.tanemaki-lane{height:104px}
+.tanemaki-lane[data-effect="welcome"] .tanemaki-walker{animation:tanemaki-run .72s .58s ease-in forwards;left:var(--walk-start,30%)}
+.tanemaki-lane[data-effect="welcome"] .tanemaki-sprite{transform-origin:50% 90%;animation:tanemaki-frames .32s steps(1,end) infinite,tanemaki-pop .58s ease-out both}
+@keyframes tanemaki-pop{0%{transform:scale(1)}20%{transform:scale(1.13,.83)}52%{transform:translateY(-13px) scale(.94,1.07)}78%{transform:scale(1.05,.94)}100%{transform:scale(1)}}
+.tanemaki-walker:before,.tanemaki-walker:after{content:"";position:absolute;pointer-events:none}
+[data-effect="loading"] .tanemaki-walker:after{width:4px;height:4px;left:9px;bottom:4px;border-radius:50%;background:#b6c9a6;box-shadow:-12px 0 #cbd9ba,-24px 0 #e1e7ce;animation:tanemaki-dust .64s ease-out infinite}
+@keyframes tanemaki-dust{from{opacity:.7;transform:translateX(4px)}to{opacity:0;transform:translateX(-8px)}}
+[data-effect="welcome"] .tanemaki-walker:before,[data-effect="welcome"] .tanemaki-walker:after{width:9px;height:6px;left:36px;top:35px;border-radius:9px 0 9px 0;background:#8fba76;opacity:0;animation:tanemaki-leaf-left .9s .16s ease-out both}
+[data-effect="welcome"] .tanemaki-walker:after{background:#d7bc6d;animation-name:tanemaki-leaf-right}
+@keyframes tanemaki-leaf-left{0%{opacity:0;transform:translate(0,0) rotate(0)}20%{opacity:1}100%{opacity:0;transform:translate(-38px,-30px) rotate(-100deg)}}
+@keyframes tanemaki-leaf-right{0%{opacity:0;transform:translate(0,0) rotate(0)}20%{opacity:1}100%{opacity:0;transform:translate(40px,-38px) rotate(130deg)}}
+[data-effect="farewell"] .tanemaki-walker{left:calc(50% - 40px)}
+[data-effect="farewell"] .tanemaki-sprite{display:none}
+[data-effect="farewell"] .tanemaki-walker:before,[data-effect="farewell"] .tanemaki-walker:after{width:14px;height:14px;top:30px;left:20px;background:#c9b572;clip-path:polygon(50% 0,61% 38%,100% 50%,61% 62%,50% 100%,39% 62%,0 50%,39% 38%);animation:tanemaki-spark .9s ease-out both}
+[data-effect="farewell"] .tanemaki-walker:after{left:48px;top:16px;width:9px;height:9px;animation-delay:.18s}
+@keyframes tanemaki-spark{0%{opacity:0;transform:scale(.2)}35%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.3)}}
+@media(prefers-reduced-motion:reduce){.tanemaki-lane *,.tanemaki-lane *:before,.tanemaki-lane *:after{animation:none!important}.tanemaki-walker:before,.tanemaki-walker:after{display:none}.tanemaki-lane[data-effect="welcome"] .tanemaki-walker{visibility:hidden}}
+
 </style>
 </head>
 <body>
@@ -114,7 +133,7 @@ function transport(x,cb){var finished=false,timer;function finish(r){if(finished
  window[name]=function(r){cleanup();finish(r);};s.onerror=function(){cleanup();finish({uncertain:true});};s.referrerPolicy='no-referrer';s.src=EXEC_URL+'?'+new URLSearchParams({action:'checkin',code:x.code,secret:getSecret(),requestId:x.id,callback:name});document.body.appendChild(s);
  setTimeout(cleanup,21000);
 }
-function showResult(x){clearResultTimer();var r=x.result;if(x.state!=='done'){currentId=null;ready();return;}var kind=r.type==='退室'?'out':'in';st.dataset.state=kind;st.innerHTML='<div class="label">'+(r.cooldown?'すでに記録済みです':'記録しました')+'</div><div class="name">'+esc(r.name)+'<small>さん</small></div><div class="action">'+esc(r.type)+(r.cooldown?'済み':'完了')+'</div><p class="detail">'+(r.type==='退室'?'おつかれさまでした。':'今日も、一歩ずつ。')+'</p>';decorateAttendanceStatus(r.type==='入室'&&!r.cooldown?'welcome':'');dismissResultAfterDelay();}
+function showResult(x){clearResultTimer();var r=x.result;if(x.state!=='done'){currentId=null;ready();return;}var kind=r.type==='退室'?'out':'in';st.dataset.state=kind;st.innerHTML='<div class="label">'+(r.cooldown?'すでに記録済みです':'記録しました')+'</div><div class="name">'+esc(r.name)+'<small>さん</small></div><div class="action">'+esc(r.type)+(r.cooldown?'済み':'完了')+'</div><p class="detail">'+(r.type==='退室'?'おつかれさまでした。':'今日も、一歩ずつ。')+'</p>';decorateAttendanceStatus(!r.cooldown?(r.type==='入室'?'welcome':'farewell'):'');dismissResultAfterDelay();}
 function pump(){if(sending)return;var x=entries.find(function(x){return x.state==='queued';});if(!x)return;sending=true;x.state='sending';save();receipts();transport(x,function(r){sending=false;if(r&&(r.ok||r.cooldown)){x.state='done';x.result=r;delete x.code;tone(880,90);}else{x.state=r&&r.uncertain?'uncertain':'error';x.message=r&&r.message||'通信の確認が必要です';}save();receipts();if(currentId===x.id)showResult(x);pump();});}
 function submit(code){code=String(code||'').trim();if(!code)return;if(!getSecret()){document.getElementById('setup').hidden=false;state('error','端末の設定','ランチャーから<br>開き直してください','受付の設定を確認してください。');return;}
  var key=code.toLowerCase(),pending=entries.find(function(x){return x.code&&x.code.toLowerCase()===key&&x.state!=='done';});if(pending){currentId=pending.id;if(pending.state==='uncertain'||pending.state==='error'){pending.state='queued';save();receipts();tone(660,40);state('read',tick,'読み取り完了 ✓','同じ受付の記録を確認しています。もう、かざす必要はありません。');pump();}else state('read',tick,'読み取り完了 ✓','読み取り済みです。そのまま記録を続けています。');return;}
