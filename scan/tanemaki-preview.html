@@ -16,6 +16,25 @@
 #status[data-state="camera-wait"] .detail{color:#d6e9dd}
 @media(prefers-reduced-motion:reduce){.tanemaki-lane *{animation:none!important}.tanemaki-walker{left:calc(50% - 40px)}.tanemaki-lane[data-effect="welcome"] .tanemaki-walker{visibility:hidden}}
 
+/* Tanemaki: gentle bounce, drifting leaves and tiny footsteps. */
+.tanemaki-lane{height:104px}
+.tanemaki-lane[data-effect="welcome"] .tanemaki-walker{animation:tanemaki-run .72s .58s ease-in forwards;left:var(--walk-start,30%)}
+.tanemaki-lane[data-effect="welcome"] .tanemaki-sprite{transform-origin:50% 90%;animation:tanemaki-frames .32s steps(1,end) infinite,tanemaki-pop .58s ease-out both}
+@keyframes tanemaki-pop{0%{transform:scale(1)}20%{transform:scale(1.13,.83)}52%{transform:translateY(-13px) scale(.94,1.07)}78%{transform:scale(1.05,.94)}100%{transform:scale(1)}}
+.tanemaki-walker:before,.tanemaki-walker:after{content:"";position:absolute;pointer-events:none}
+[data-effect="loading"] .tanemaki-walker:after{width:4px;height:4px;left:9px;bottom:4px;border-radius:50%;background:#b6c9a6;box-shadow:-12px 0 #cbd9ba,-24px 0 #e1e7ce;animation:tanemaki-dust .64s ease-out infinite}
+@keyframes tanemaki-dust{from{opacity:.7;transform:translateX(4px)}to{opacity:0;transform:translateX(-8px)}}
+[data-effect="welcome"] .tanemaki-walker:before,[data-effect="welcome"] .tanemaki-walker:after{width:9px;height:6px;left:36px;top:35px;border-radius:9px 0 9px 0;background:#8fba76;opacity:0;animation:tanemaki-leaf-left .9s .16s ease-out both}
+[data-effect="welcome"] .tanemaki-walker:after{background:#d7bc6d;animation-name:tanemaki-leaf-right}
+@keyframes tanemaki-leaf-left{0%{opacity:0;transform:translate(0,0) rotate(0)}20%{opacity:1}100%{opacity:0;transform:translate(-38px,-30px) rotate(-100deg)}}
+@keyframes tanemaki-leaf-right{0%{opacity:0;transform:translate(0,0) rotate(0)}20%{opacity:1}100%{opacity:0;transform:translate(40px,-38px) rotate(130deg)}}
+[data-effect="farewell"] .tanemaki-walker{left:calc(50% - 40px)}
+[data-effect="farewell"] .tanemaki-sprite{display:none}
+[data-effect="farewell"] .tanemaki-walker:before,[data-effect="farewell"] .tanemaki-walker:after{width:14px;height:14px;top:30px;left:20px;background:#c9b572;clip-path:polygon(50% 0,61% 38%,100% 50%,61% 62%,50% 100%,39% 62%,0 50%,39% 38%);animation:tanemaki-spark .9s ease-out both}
+[data-effect="farewell"] .tanemaki-walker:after{left:48px;top:16px;width:9px;height:9px;animation-delay:.18s}
+@keyframes tanemaki-spark{0%{opacity:0;transform:scale(.2)}35%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.3)}}
+@media(prefers-reduced-motion:reduce){.tanemaki-lane *,.tanemaki-lane *:before,.tanemaki-lane *:after{animation:none!important}.tanemaki-walker:before,.tanemaki-walker:after{display:none}.tanemaki-lane[data-effect="welcome"] .tanemaki-walker{visibility:hidden}}
+
 </style><main><header>SeeD</header><section id="status" aria-live="polite"></section><div class="controls"><button data-effect="loading" aria-pressed="true">読み込み</button><button data-effect="welcome" aria-pressed="false">入室完了</button><button data-effect="out" aria-pressed="false">退室</button></div><footer>アニメーションの見本です。入退室は記録されません。</footer></main>
 <script>
 var st=document.getElementById('status');
@@ -34,6 +53,6 @@ function decorateAttendanceStatus(effect){
   }
 }
 
-function preview(effect){var done=effect==='welcome',out=effect==='out';st.innerHTML='<div class="label">'+(done?'記録しました':out?'退室':'読み取り完了')+'</div><h1 class="title">'+(done?'入室完了':out?'おつかれさまでした':'確認しています')+'</h1><p class="detail">'+(done?'今日も、一歩ずつ。':out?'気をつけて帰ってね。':'そのまま、少し待ってね。')+'</p>';decorateAttendanceStatus(out?'':effect);document.querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.effect===effect));});}
+function preview(effect){var done=effect==='welcome',out=effect==='out';st.innerHTML='<div class="label">'+(done?'記録しました':out?'退室':'読み取り完了')+'</div><h1 class="title">'+(done?'入室完了':out?'おつかれさまでした':'確認しています')+'</h1><p class="detail">'+(done?'今日も、一歩ずつ。':out?'気をつけて帰ってね。':'そのまま、少し待ってね。')+'</p>';decorateAttendanceStatus(out?'farewell':effect);document.querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.effect===effect));});}
 document.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){preview(b.dataset.effect);});});preview('loading');
 </script></html>
