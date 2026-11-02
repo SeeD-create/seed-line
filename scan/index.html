@@ -351,26 +351,25 @@ function receipts(){var list=entries.slice(-8);var outstanding=entries.filter(fu
 document.getElementById('queue').addEventListener('click',function(e){var id=e.target.getAttribute('data-retry');if(!id)return;var x=entries.find(function(x){return x.id===id;});if(x){clearResultTimer();x.state='queued';currentId=x.id;save();receipts();state('read',tick,'記録を確認しています','もう一度QRをかざす必要はありません。');pump();}});
 
 
-function transport(x,cb){var finished=false,timer;function finish(r){if(finished)return;finished=true;clearTimeout(timer);cb(r);}
-
-
- timer=setTimeout(function(){finish({uncertain:true,message:'通信の確認が必要です'});},20000);
-
-
- if(isGas){google.script.run.withSuccessHandler(finish).withFailureHandler(function(){finish({uncertain:true,message:'サーバーの応答を確認できません。同じ受付を再確認してください。'});}).apiCheckin(getSecret(),x.code,x.id);return;}
-
-
- var name='__seedAttendance'+(++_i),s=document.createElement('script');function cleanup(){if(s.parentNode)s.parentNode.removeChild(s);window[name]=function(){};setTimeout(function(){delete window[name];},60000);}
-
-
- window[name]=function(r){cleanup();finish(r);};s.onerror=function(){cleanup();finish({uncertain:true});};s.referrerPolicy='no-referrer';s.src=EXEC_URL+'?'+new URLSearchParams({action:'checkin',code:x.code,secret:getSecret(),requestId:x.id,callback:name});document.body.appendChild(s);
-
-
- setTimeout(cleanup,21000);
-
-
+function transport(x,cb){
+ var finished=false,controller=typeof AbortController==='function'?new AbortController():null;
+ var timer=setTimeout(function(){finish({uncertain:true,message:'通信の応答がありません。同じ読み取りを再確認してください。'});if(controller)controller.abort();},25000);
+ function finish(r){if(finished)return;finished=true;clearTimeout(timer);cb(r);}
+ try{
+  if(isGas){google.script.run.withSuccessHandler(finish).withFailureHandler(function(){finish({uncertain:true,message:'サーバーの応答を確認できません。同じ読み取りを再確認してください。'});}).apiCheckin(getSecret(),x.code,x.id);return;}
+  // Omit Google login cookies: multi-account redirects can otherwise return a
+  // Google Drive error page instead of the public Apps Script response.
+  var callback='seedReceipt';
+  var url=EXEC_URL+'?'+new URLSearchParams({action:'checkin',code:x.code,secret:getSecret(),requestId:x.id,callback:callback});
+  var options={method:'GET',credentials:'omit',redirect:'follow',referrerPolicy:'no-referrer'};
+  if(controller)options.signal=controller.signal;
+  fetch(url,options).then(function(response){if(!response.ok)throw new Error('HTTP '+response.status);return response.text();}).then(function(text){
+   text=text.trim();var prefix=callback+'(';
+   if(text.slice(0,prefix.length)!==prefix||text.slice(-2)!==');')throw new Error('Unexpected response');
+   finish(JSON.parse(text.slice(prefix.length,-2)));
+  }).catch(function(){finish({uncertain:true,message:'通信を確認できません。同じ読み取りを再確認してください。'});});
+ }catch(err){finish({uncertain:true,message:'通信を開始できません。同じ読み取りを再確認してください。'});}
 }
-
 
 function showResult(x){clearResultTimer();var r=x.result;if(x.state!=='done'){
   currentId=null;
@@ -380,7 +379,7 @@ function showResult(x){clearResultTimer();var r=x.result;if(x.state!=='done'){
  }var kind=r.type==='退室'?'out':'in';st.dataset.state=kind;st.innerHTML='<div class="label">'+(r.cooldown?'すでに記録済みです':'記録しました')+'</div><div class="name">'+esc(r.name)+'<small>さん</small></div><div class="action">'+esc(r.type)+(r.cooldown?'済み':'完了')+'</div><p class="detail">'+(r.type==='退室'?'おつかれさまでした。':'今日も、一歩ずつ。')+'</p>';decorateAttendanceStatus(!r.cooldown?(r.type==='入室'?'welcome':'farewell'):'');dismissResultAfterDelay();}
 
 
-function pump(){if(sending)return;var x=entries.find(function(x){return x.state==='queued';});if(!x)return;sending=true;x.state='sending';save();receipts();transport(x,function(r){sending=false;if(r&&(r.ok||r.cooldown)){x.state='done';x.result=r;delete x.code;tone(880,90);}else{x.state=r&&r.uncertain?'uncertain':'error';x.message=r&&r.message||'通信の確認が必要です';}save();receipts();if(currentId===x.id)showResult(x);pump();});}
+function pump(){if(sending)return;var x=entries.find(function(x){return x.state==='queued';});if(!x)return;sending=true;x.state='sending';save();receipts();transport(x,function(r){sending=false;if(r&&(r.ok||r.cooldown)){x.state='done';x.result=r;delete x.code;tone(880,90);}else{x.state=r&&r.uncertain?'uncertain':'error';x.message=r&&r.message||'通信の確認が必要です';}save();receipts();if(x.state==='error'||x.state==='uncertain'||currentId===x.id)showResult(x);pump();});}
 
 
 function submit(code){code=String(code||'').trim();if(!code)return;if(!getSecret()){document.getElementById('setup').hidden=false;state('error','端末の設定','ランチャーから<br>開き直してください','受付の設定を確認してください。');return;}
@@ -424,7 +423,16 @@ function startCamera(){
  try{
   if(!qr)qr=new Html5Qrcode('reader',{formatsToSupport:[Html5QrcodeSupportedFormats.QR_CODE],verbose:false});
   var cfg={fps:12,disableFlip:false,experimentalFeatures:{useBarCodeDetectorIfSupported:true}};
-  qr.start({facingMode:desiredFacing},cfg,onDecoded,function(){}).then(function(){
+  qr.start({facingMode:{exact:desiredFacing}},cfg,onDecoded,function(){}).catch(function(err){
+   if(!/Overconstrained|ConstraintNotSatisfied|NotFound/i.test(String(err&&err.name||'')+' '+String(err&&err.message||err)))throw err;
+   return Html5Qrcode.getCameras().then(function(devices){
+    var pattern=desiredFacing==='user'?/front|user|前面|内側|フロント|facetime/i:/back|rear|environment|背面|外側/i;
+    var match=devices.find(function(d){return pattern.test(d.label||'');});
+    if(!match&&devices.length===1)match=devices[0];
+    if(!match)throw new Error('指定したカメラが見つかりません。カメラ切替をお試しください。');
+    return qr.start(match.id,cfg,onDecoded,function(){});
+   });
+  }).then(function(){
    if(attempt!==camAttempt)return;clearTimeout(watchdog);starting=false;camStarted=true;cameraLabel();startBtn.hidden=true;
    frameMsg.textContent=(desiredFacing==='user'?'内側':'外側')+'カメラにQRをかざしてください';if(!currentId)ready();tuneTrack();
   }).catch(function(err){if(attempt!==camAttempt)return;clearTimeout(watchdog);starting=false;cameraLabel();camError(err);});
