@@ -170,6 +170,13 @@ main{max-width:none;padding:0}.eyebrow{display:none}.layout{display:block}
 @keyframes tanemaki-spark{0%{opacity:0;transform:scale(.2)}35%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.3)}}
 @media(prefers-reduced-motion:reduce){.tanemaki-lane *,.tanemaki-lane *:before,.tanemaki-lane *:after{animation:none!important}.tanemaki-walker:before,.tanemaki-walker:after{display:none}.tanemaki-lane[data-effect="welcome"] .tanemaki-walker{visibility:hidden}}
 
+
+#status[data-state="error"]{pointer-events:auto}
+#status .retry-current{margin-top:12px;align-self:flex-start;pointer-events:auto}
+.camera-controls{flex-wrap:wrap}
+#switchCamera{font-size:13px;padding:8px 12px}
+.receipt.error{border-color:#b84929;color:#9a3e26}
+
 </style>
 
 
@@ -338,7 +345,7 @@ try{entries=JSON.parse(sessionStorage.getItem('seedAttendanceOutbox')||'[]').fil
 function save(){try{sessionStorage.setItem('seedAttendanceOutbox',JSON.stringify(entries.filter(function(x){return x.state!=='done';}).map(function(x){return {id:x.id,code:x.code};})));}catch(e){}}
 
 
-function receipts(){var list=entries.slice(-8);var outstanding=entries.filter(function(x){return x.state!=='done';});list=outstanding.concat(list.filter(function(x){return x.state==='done';}));document.getElementById('queue').innerHTML=list.length?'<div class="queue-title">受付の記録</div>'+list.map(function(x){var r=x.result;var title=r&&r.name?esc(r.name)+' さん · '+esc(r.type||'')+(r.cooldown?'済み':''):('読み取り '+esc(x.number||''));var msg=x.state==='done'?'記録済み':x.state==='uncertain'?'受付で再確認':x.state==='error'?'受付で再確認':'読み取り済み · 記録を確認しています';return '<div class="receipt '+''+'"><div>'+title+'<small>'+msg+'</small></div>'+((x.state==='uncertain'||x.state==='error')?'<button data-retry="'+esc(x.id)+'">再確認</button>':'')+'</div>';}).join(''):'';}
+function receipts(){var list=entries.slice(-8);var outstanding=entries.filter(function(x){return x.state!=='done';});list=outstanding.concat(list.filter(function(x){return x.state==='done';}));document.getElementById('queue').innerHTML=list.length?'<div class="queue-title">受付の記録</div>'+list.map(function(x){var r=x.result;var title=r&&r.name?esc(r.name)+' さん · '+esc(r.type||'')+(r.cooldown?'済み':''):('読み取り '+esc(x.number||''));var msg=x.state==='done'?'記録済み':x.state==='uncertain'?(x.message||'通信の応答がありません'):x.state==='error'?(x.message||'記録できませんでした'):'読み取り済み · 記録を確認しています';return '<div class="receipt '+((x.state==='error'||x.state==='uncertain')?'error':'')+'"><div>'+title+'<small>'+esc(msg)+'</small></div>'+((x.state==='uncertain'||x.state==='error')?'<button data-retry="'+esc(x.id)+'">再確認</button>':'')+'</div>';}).join(''):'';}
 
 
 document.getElementById('queue').addEventListener('click',function(e){var id=e.target.getAttribute('data-retry');if(!id)return;var x=entries.find(function(x){return x.id===id;});if(x){clearResultTimer();x.state='queued';currentId=x.id;save();receipts();state('read',tick,'記録を確認しています','もう一度QRをかざす必要はありません。');pump();}});
@@ -350,7 +357,7 @@ function transport(x,cb){var finished=false,timer;function finish(r){if(finished
  timer=setTimeout(function(){finish({uncertain:true,message:'通信の確認が必要です'});},20000);
 
 
- if(isGas){google.script.run.withSuccessHandler(finish).withFailureHandler(function(){finish({uncertain:true});}).apiCheckin(getSecret(),x.code,x.id);return;}
+ if(isGas){google.script.run.withSuccessHandler(finish).withFailureHandler(function(){finish({uncertain:true,message:'サーバーの応答を確認できません。同じ受付を再確認してください。'});}).apiCheckin(getSecret(),x.code,x.id);return;}
 
 
  var name='__seedAttendance'+(++_i),s=document.createElement('script');function cleanup(){if(s.parentNode)s.parentNode.removeChild(s);window[name]=function(){};setTimeout(function(){delete window[name];},60000);}
@@ -365,7 +372,12 @@ function transport(x,cb){var finished=false,timer;function finish(r){if(finished
 }
 
 
-function showResult(x){clearResultTimer();var r=x.result;if(x.state!=='done'){currentId=null;ready();return;}var kind=r.type==='退室'?'out':'in';st.dataset.state=kind;st.innerHTML='<div class="label">'+(r.cooldown?'すでに記録済みです':'記録しました')+'</div><div class="name">'+esc(r.name)+'<small>さん</small></div><div class="action">'+esc(r.type)+(r.cooldown?'済み':'完了')+'</div><p class="detail">'+(r.type==='退室'?'おつかれさまでした。':'今日も、一歩ずつ。')+'</p>';decorateAttendanceStatus(!r.cooldown?(r.type==='入室'?'welcome':'farewell'):'');dismissResultAfterDelay();}
+function showResult(x){clearResultTimer();var r=x.result;if(x.state!=='done'){
+  currentId=null;
+  state('error','記録の確認が必要です','入退室を確認できませんでした',esc(x.message||'通信の応答がありません。同じ受付を再確認してください。'));
+  var retry=document.createElement('button');retry.type='button';retry.className='retry-current';retry.textContent='この読み取りを再確認';
+  retry.addEventListener('click',function(){x.state='queued';currentId=x.id;save();receipts();state('read',tick,'記録を再確認しています','もう一度QRをかざす必要はありません。');pump();});st.appendChild(retry);tone(220,150);return;
+ }var kind=r.type==='退室'?'out':'in';st.dataset.state=kind;st.innerHTML='<div class="label">'+(r.cooldown?'すでに記録済みです':'記録しました')+'</div><div class="name">'+esc(r.name)+'<small>さん</small></div><div class="action">'+esc(r.type)+(r.cooldown?'済み':'完了')+'</div><p class="detail">'+(r.type==='退室'?'おつかれさまでした。':'今日も、一歩ずつ。')+'</p>';decorateAttendanceStatus(!r.cooldown?(r.type==='入室'?'welcome':'farewell'):'');dismissResultAfterDelay();}
 
 
 function pump(){if(sending)return;var x=entries.find(function(x){return x.state==='queued';});if(!x)return;sending=true;x.state='sending';save();receipts();transport(x,function(r){sending=false;if(r&&(r.ok||r.cooldown)){x.state='done';x.result=r;delete x.code;tone(880,90);}else{x.state=r&&r.uncertain?'uncertain':'error';x.message=r&&r.message||'通信の確認が必要です';}save();receipts();if(currentId===x.id)showResult(x);pump();});}
@@ -389,26 +401,44 @@ function onDecoded(text){var code=String(text||'').trim();if(!code)return;var ke
 document.getElementById('manual').addEventListener('submit',function(e){e.preventDefault();unlockAudio();var c=codeEl.value;codeEl.value='';submit(c);});
 
 
-var qr=null,starting=false,camStarted=false,camAttempt=0;
-
-
-function tuneTrack(){try{var v=document.querySelector('#reader video');if(v){var fit=function(){if(v.videoWidth&&v.videoHeight)document.getElementById('reader').style.setProperty('--video-aspect',String(v.videoWidth/v.videoHeight));};v.addEventListener('resize',fit);fit();}var t=v&&v.srcObject&&v.srcObject.getVideoTracks()[0];if(t&&t.applyConstraints)t.applyConstraints({width:{ideal:1920},height:{ideal:1080},advanced:[{focusMode:'continuous'}]}).catch(function(){t.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(function(){});});}catch(e){}}
-
-
-function camError(){frameMsg.textContent='手入力・USBスキャナも使えます';if(!currentId)state('camera-wait','カメラの準備','カメラを開始してください','下のボタンから開始できます。');startBtn.hidden=false;startBtn.textContent=starting?'ページを開き直す':'カメラを開始';}
-
-
-function startCamera(){unlockAudio();if(starting){location.reload();return;}if(camStarted)return;starting=true;startBtn.hidden=true;var attempt=++camAttempt;frameMsg.textContent='カメラに接続しています';if(!currentId)state('preparing','準備中','カメラを準備しています','まだ、かざさずにお待ちください。');var watchdog=setTimeout(function(){if(attempt===camAttempt&&starting)camError();},6000);
-
-
- try{if(!qr)qr=new Html5Qrcode('reader',{formatsToSupport:[Html5QrcodeSupportedFormats.QR_CODE],verbose:false});var cfg={fps:30,disableFlip:true,experimentalFeatures:{useBarCodeDetectorIfSupported:true}};
-
-
- var devices=Html5Qrcode.getCameras().catch(function(){return [];});devices.then(function(d){return qr.start(d&&d.length?d[d.length-1].id:{facingMode:'environment'},cfg,onDecoded,function(){});}).then(function(){clearTimeout(watchdog);starting=false;camStarted=true;startBtn.hidden=true;frameMsg.textContent='カメラにQRをかざしてください';if(!currentId)ready();tuneTrack();}).catch(function(){clearTimeout(watchdog);starting=false;camError();});
-
-
- }catch(e){clearTimeout(watchdog);starting=false;camError();}}
-
+var qr=null,starting=false,camStarted=false,camAttempt=0,desiredFacing='user';
+try{desiredFacing=localStorage.getItem('attendFacing')==='environment'?'environment':'user';}catch(e){}
+var switchBtn=document.createElement('button');switchBtn.id='switchCamera';switchBtn.type='button';
+startBtn.parentElement.appendChild(switchBtn);
+function cameraLabel(){switchBtn.textContent=desiredFacing==='user'?'外側カメラに切替':'内側カメラに切替';switchBtn.disabled=starting;}
+cameraLabel();
+function tuneTrack(){try{var v=document.querySelector('#reader video');if(v){var fit=function(){if(v.videoWidth&&v.videoHeight)document.getElementById('reader').style.setProperty('--video-aspect',String(v.videoWidth/v.videoHeight));};v.addEventListener('resize',fit);fit();}}catch(e){}}
+function camError(err){
+ var denied=err&&/NotAllowed|Permission|denied/i.test(String(err.name||'')+' '+String(err.message||err));
+ frameMsg.textContent=denied?'ブラウザのカメラ許可を確認してください':'手入力・USBスキャナも使えます';
+ if(!currentId)state('camera-wait','カメラの準備',denied?'カメラを許可してください':'カメラを開始してください',denied?'SafariまたはChromeで開き、サイトのカメラ使用を許可してください。':'下のボタンから開始できます。');
+ startBtn.hidden=false;startBtn.textContent=starting?'ページを開き直す':'カメラを開始';cameraLabel();
+}
+function startCamera(){
+ unlockAudio();if(starting){location.reload();return;}if(camStarted)return;
+ if(!getSecret()){state('error','端末の設定','受付キーを設定してください','教室用の初回設定リンクから開いてください。');return;}
+ starting=true;cameraLabel();startBtn.hidden=true;var attempt=++camAttempt;
+ frameMsg.textContent=(desiredFacing==='user'?'内側':'外側')+'カメラに接続しています';
+ if(!currentId)state('preparing','準備中','カメラを準備しています','まだ、かざさずにお待ちください。');
+ var watchdog=setTimeout(function(){if(attempt===camAttempt&&starting)camError();},12000);
+ try{
+  if(!qr)qr=new Html5Qrcode('reader',{formatsToSupport:[Html5QrcodeSupportedFormats.QR_CODE],verbose:false});
+  var cfg={fps:12,disableFlip:false,experimentalFeatures:{useBarCodeDetectorIfSupported:true}};
+  qr.start({facingMode:desiredFacing},cfg,onDecoded,function(){}).then(function(){
+   if(attempt!==camAttempt)return;clearTimeout(watchdog);starting=false;camStarted=true;cameraLabel();startBtn.hidden=true;
+   frameMsg.textContent=(desiredFacing==='user'?'内側':'外側')+'カメラにQRをかざしてください';if(!currentId)ready();tuneTrack();
+  }).catch(function(err){if(attempt!==camAttempt)return;clearTimeout(watchdog);starting=false;cameraLabel();camError(err);});
+ }catch(err){clearTimeout(watchdog);starting=false;cameraLabel();camError(err);}
+}
+switchBtn.addEventListener('click',function(){
+ if(starting)return;
+ desiredFacing=desiredFacing==='user'?'environment':'user';
+ try{localStorage.setItem('attendFacing',desiredFacing);}catch(e){}
+ cameraLabel();
+ if(!camStarted){startCamera();return;}
+ starting=true;cameraLabel();
+ qr.stop().then(function(){camStarted=false;starting=false;cameraLabel();startCamera();}).catch(function(err){starting=false;cameraLabel();camError(err);});
+});
 
 startBtn.addEventListener('click',startCamera);receipts();
 
