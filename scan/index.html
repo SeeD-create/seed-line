@@ -1,54 +1,156 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="referrer" content="no-referrer">
-<title>入退室受付 | 学習塾SeeD</title>
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<style>
-:root{font-family:"Yu Gothic UI","Hiragino Sans",sans-serif;color:#163c38;background:#f3f6f2;font-synthesis:none}
-*{box-sizing:border-box}body{margin:0}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:3px solid #c49a35;outline-offset:4px}
-header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 5vw;background:#fff;border-bottom:1px solid #dce5df}header img{width:60px;height:56px;object-fit:contain}header span{font-size:15px;letter-spacing:.15em;font-weight:700}.brand{display:flex;align-items:center;gap:12px}.brand strong{font-size:23px;letter-spacing:.02em;white-space:nowrap}
-main{max-width:1360px;margin:0 auto;padding:36px 5vw}.eyebrow{font-size:12px;letter-spacing:.18em;font-weight:700;color:#647d74;margin-bottom:18px}.layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(260px,1fr);gap:28px;align-items:start}
-#status{min-height:365px;padding:40px;border:1px solid #dae4dd;border-radius:28px;background:#fff;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;transition:background .15s}
-#status:before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:#a6b8ae}.label{font-size:17px;font-weight:700;margin-bottom:18px}.title{font-size:clamp(30px,3.8vw,54px);line-height:1.4;font-weight:800;letter-spacing:-.04em;margin:0;overflow-wrap:anywhere}.detail{font-size:18px;line-height:1.8;margin:18px 0 0;color:#5b756c}.name{font-size:clamp(32px,4.3vw,64px);font-weight:800;line-height:1.4;overflow-wrap:anywhere}.name small{font-size:20px;margin-left:10px}.action{font-size:clamp(40px,5.2vw,76px);font-weight:800;line-height:1.2}
-#status[data-state="read"]{background:#e8f3ed}#status[data-state="read"]:before,#status[data-state="in"]:before{background:#198365}#status[data-state="in"]{background:#e8f3ed}#status[data-state="out"]{background:#e8f1fb;color:#235887}#status[data-state="out"]:before{background:#397daf}#status[data-state="error"]{background:#fff0eb;color:#9a3e26}#status[data-state="error"]:before{background:#b84929}
-.check{display:inline-flex;align-items:center;gap:10px}.check svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:2.5}.help{padding:18px 6px;font-size:16px;color:#577267;line-height:1.8}.help strong{color:#234d42}.camera{border-radius:24px;background:#183b34;padding:16px;color:#e6f2eb;overflow:hidden}.camera-head{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin:0 2px 13px;letter-spacing:.04em}.camera-head i{width:7px;height:7px;display:inline-block;border-radius:50%;background:#a4d8a3;margin-right:7px}
-#reader{width:100%;min-height:180px;background:#102923;border-radius:14px;overflow:hidden}#reader video{display:block;width:100%!important;max-height:320px;object-fit:cover}#frameMsg{font-size:13px;line-height:1.6;margin:12px 2px 0;min-height:21px}button{background:#fff;color:#245647;border:1px solid #cadad0;border-radius:10px;padding:10px 16px;font-weight:700}#startBtn{margin-top:12px;width:100%}.manual{margin-top:22px}.manual label{display:block;font-size:13px;font-weight:700;margin-bottom:8px}.input-row{display:flex;gap:8px}.manual input{min-width:0;width:100%;padding:13px;border:1px solid #ccd9d0;border-radius:10px;background:#fff;font-size:18px}.manual button{flex-shrink:0}
-#setup{background:#fff0eb;padding:20px;border-radius:16px;line-height:1.8;margin-bottom:20px}#queue{margin-top:22px}.queue-title{font-size:13px;color:#647d74;font-weight:700;margin-bottom:9px}.receipt{padding:15px 18px;border:1px solid #dbe4dd;border-radius:14px;background:#fff;margin-bottom:8px;display:flex;gap:12px;justify-content:space-between;align-items:center;overflow-wrap:anywhere}.receipt small{display:block;color:#6c7d73;margin-top:4px}.receipt.error{border-color:#ce8b78;color:#9a3e26}.receipt button{white-space:nowrap;font-size:13px}.quiet{font-size:12px;color:#788e81;line-height:1.7;margin-top:26px}footer{max-width:1360px;margin:auto;padding:0 5vw 26px;color:#778c81;font-size:12px;letter-spacing:.04em}
-@media(max-width:760px){header{padding:16px 20px;gap:8px}header img{width:44px;height:44px}header span{font-size:12px}.brand{gap:6px}.brand strong{font-size:18px}main{padding:24px 20px}.layout{grid-template-columns:minmax(0,1fr);gap:18px}#status{min-height:275px;padding:28px}.eyebrow{margin-bottom:12px}.detail{font-size:16px}.camera{max-width:100%}#reader{min-height:150px}#reader video{max-height:230px}.help{font-size:14px}.quiet{margin-top:16px}footer{padding:0 20px 22px}}
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}
-
-/* Full-viewport camera. Preserve the native video ratio; never crop the QR. */
-header{height:76px;padding:10px 24px}header img{width:48px;height:48px}
-main{max-width:none;padding:0}.eyebrow{display:none}.layout{display:block}
-.camera{position:relative;width:100%;height:calc(100vh - 76px);height:calc(100svh - 76px);min-height:360px;border-radius:0;padding:0;background:#071b16;display:flex;align-items:center;justify-content:center}
-#reader{width:100%;max-width:calc((100svh - 76px)*var(--video-aspect,1.777778));min-height:0;border-radius:0;background:transparent;overflow:visible}
-#reader video{display:block;width:100%!important;height:auto!important;max-height:none;object-fit:contain}
-.camera-head{position:absolute;left:24px;right:24px;top:18px;margin:0;z-index:2;text-shadow:0 1px 5px #000}.camera-head span{background:#071b16c9;padding:8px 12px;border-radius:8px}
-.scan-overlay{position:absolute;left:24px;bottom:64px;width:min(650px,calc(100% - 48px));z-index:2;pointer-events:none}
-#status{min-height:0;padding:20px 28px;border-radius:18px;box-shadow:0 6px 30px #0003;color:#163c38;background:#fffffff2}
-#status .label{margin-bottom:6px;font-size:14px}#status .title{font-size:clamp(26px,3.5vw,48px);line-height:1.25}#status .title br{display:none}#status .detail{font-size:15px;margin-top:8px;line-height:1.5}#status .name{font-size:clamp(28px,3.8vw,50px)}#status .action{font-size:clamp(34px,4.4vw,58px)}
-#status[data-state="ready"],#status[data-state="preparing"]{background:#071b16c9;color:#fff;border-color:#ffffff38;box-shadow:none}#status[data-state="ready"] .detail,#status[data-state="preparing"] .detail{color:#d6e9dd}
-.camera-controls{position:absolute;bottom:14px;left:24px;right:24px;display:flex;gap:12px;align-items:center;z-index:3}#frameMsg{margin:0;background:#071b16c9;border-radius:8px;padding:6px 10px;color:#e6f2eb}#startBtn{width:auto;margin:0;flex-shrink:0}
-.tools-panel{max-width:900px;margin:0 auto;padding:16px 24px 24px}.manual{margin-top:10px}#setup{margin:0;border-radius:0;padding:12px 24px}footer{padding:0 24px 20px}
-@media(max-width:760px){header{height:64px;padding:8px 16px}header img{width:40px;height:40px}.camera{height:calc(100vh - 64px);height:calc(100svh - 64px);min-height:360px}#reader{max-width:calc((100svh - 64px)*var(--video-aspect,1.777778))}.camera-head{left:12px;right:12px;top:12px;font-size:11px}.camera-head span:last-child{display:none}.scan-overlay{left:12px;bottom:74px;width:calc(100% - 24px)}#status{padding:16px 20px;border-radius:14px}#status .detail{font-size:13px}.camera-controls{left:12px;right:12px;bottom:12px;flex-wrap:wrap;gap:6px}#frameMsg{font-size:12px}.tools-panel{padding:10px 16px 20px}}
-/* Picture-book walk, clipped inside the status card. */
-#status.has-mascot .status-copy{min-width:0}
-.tanemaki-lane{position:relative;overflow:hidden;width:100%;height:86px;margin-top:4px;pointer-events:none}
-.tanemaki-walker{position:absolute;bottom:0;width:80px;height:80px;left:-80px}
-.tanemaki-sprite{display:block;width:80px;height:80px;background-image:url('https://seed-create.github.io/seed-line/scan/assets/tanemaki-round-pixel-walk-v1.png');image-rendering:pixelated;background-size:200% 200%;background-repeat:no-repeat;animation:tanemaki-frames .64s steps(1,end) infinite}
-.tanemaki-lane[data-effect="loading"] .tanemaki-walker{animation:tanemaki-walk 3.8s linear infinite}
-.tanemaki-lane[data-effect="welcome"] .tanemaki-walker{animation:tanemaki-run .85s ease-in forwards}
-.tanemaki-lane[data-effect="welcome"] .tanemaki-sprite{animation-duration:.32s}
-@keyframes tanemaki-frames{0%{background-position:0 0}25%{background-position:100% 0}50%{background-position:0 100%}75%{background-position:100% 100%}}
-@keyframes tanemaki-walk{from{left:-80px}to{left:100%}}
-@keyframes tanemaki-run{from{left:var(--walk-start,30%)}to{left:100%}}
-#status[data-state="camera-wait"]{background:#071b16c9;color:#fff;border-color:#ffffff38;box-shadow:none}
-#status[data-state="camera-wait"] .detail{color:#d6e9dd}
-@media(prefers-reduced-motion:reduce){.tanemaki-lane *{animation:none!important}.tanemaki-walker{left:calc(50% - 40px)}.tanemaki-lane[data-effect="welcome"] .tanemaki-walker{visibility:hidden}}
-
+<!DOCTYPE html>
+
+
+<html lang="ja">
+
+
+<head>
+
+
+<meta charset="utf-8">
+
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+
+<meta name="referrer" content="no-referrer">
+
+
+<title>入退室受付 | 学習塾SeeD</title>
+
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+
+<style>
+
+
+:root{font-family:"Yu Gothic UI","Hiragino Sans",sans-serif;color:#163c38;background:#f3f6f2;font-synthesis:none}
+
+
+*{box-sizing:border-box}body{margin:0}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:3px solid #c49a35;outline-offset:4px}
+
+
+header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 5vw;background:#fff;border-bottom:1px solid #dce5df}header img{width:60px;height:56px;object-fit:contain}header span{font-size:15px;letter-spacing:.15em;font-weight:700}.brand{display:flex;align-items:center;gap:12px}.brand strong{font-size:23px;letter-spacing:.02em;white-space:nowrap}
+
+
+main{max-width:1360px;margin:0 auto;padding:36px 5vw}.eyebrow{font-size:12px;letter-spacing:.18em;font-weight:700;color:#647d74;margin-bottom:18px}.layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(260px,1fr);gap:28px;align-items:start}
+
+
+#status{min-height:365px;padding:40px;border:1px solid #dae4dd;border-radius:28px;background:#fff;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;transition:background .15s}
+
+
+#status:before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:#a6b8ae}.label{font-size:17px;font-weight:700;margin-bottom:18px}.title{font-size:clamp(30px,3.8vw,54px);line-height:1.4;font-weight:800;letter-spacing:-.04em;margin:0;overflow-wrap:anywhere}.detail{font-size:18px;line-height:1.8;margin:18px 0 0;color:#5b756c}.name{font-size:clamp(32px,4.3vw,64px);font-weight:800;line-height:1.4;overflow-wrap:anywhere}.name small{font-size:20px;margin-left:10px}.action{font-size:clamp(40px,5.2vw,76px);font-weight:800;line-height:1.2}
+
+
+#status[data-state="read"]{background:#e8f3ed}#status[data-state="read"]:before,#status[data-state="in"]:before{background:#198365}#status[data-state="in"]{background:#e8f3ed}#status[data-state="out"]{background:#e8f1fb;color:#235887}#status[data-state="out"]:before{background:#397daf}#status[data-state="error"]{background:#fff0eb;color:#9a3e26}#status[data-state="error"]:before{background:#b84929}
+
+
+.check{display:inline-flex;align-items:center;gap:10px}.check svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:2.5}.help{padding:18px 6px;font-size:16px;color:#577267;line-height:1.8}.help strong{color:#234d42}.camera{border-radius:24px;background:#183b34;padding:16px;color:#e6f2eb;overflow:hidden}.camera-head{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin:0 2px 13px;letter-spacing:.04em}.camera-head i{width:7px;height:7px;display:inline-block;border-radius:50%;background:#a4d8a3;margin-right:7px}
+
+
+#reader{width:100%;min-height:180px;background:#102923;border-radius:14px;overflow:hidden}#reader video{display:block;width:100%!important;max-height:320px;object-fit:cover}#frameMsg{font-size:13px;line-height:1.6;margin:12px 2px 0;min-height:21px}button{background:#fff;color:#245647;border:1px solid #cadad0;border-radius:10px;padding:10px 16px;font-weight:700}#startBtn{margin-top:12px;width:100%}.manual{margin-top:22px}.manual label{display:block;font-size:13px;font-weight:700;margin-bottom:8px}.input-row{display:flex;gap:8px}.manual input{min-width:0;width:100%;padding:13px;border:1px solid #ccd9d0;border-radius:10px;background:#fff;font-size:18px}.manual button{flex-shrink:0}
+
+
+#setup{background:#fff0eb;padding:20px;border-radius:16px;line-height:1.8;margin-bottom:20px}#queue{margin-top:22px}.queue-title{font-size:13px;color:#647d74;font-weight:700;margin-bottom:9px}.receipt{padding:15px 18px;border:1px solid #dbe4dd;border-radius:14px;background:#fff;margin-bottom:8px;display:flex;gap:12px;justify-content:space-between;align-items:center;overflow-wrap:anywhere}.receipt small{display:block;color:#6c7d73;margin-top:4px}.receipt.error{border-color:#ce8b78;color:#9a3e26}.receipt button{white-space:nowrap;font-size:13px}.quiet{font-size:12px;color:#788e81;line-height:1.7;margin-top:26px}footer{max-width:1360px;margin:auto;padding:0 5vw 26px;color:#778c81;font-size:12px;letter-spacing:.04em}
+
+
+@media(max-width:760px){header{padding:16px 20px;gap:8px}header img{width:44px;height:44px}header span{font-size:12px}.brand{gap:6px}.brand strong{font-size:18px}main{padding:24px 20px}.layout{grid-template-columns:minmax(0,1fr);gap:18px}#status{min-height:275px;padding:28px}.eyebrow{margin-bottom:12px}.detail{font-size:16px}.camera{max-width:100%}#reader{min-height:150px}#reader video{max-height:230px}.help{font-size:14px}.quiet{margin-top:16px}footer{padding:0 20px 22px}}
+
+
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+
+
+
+
+/* Full-viewport camera. Preserve the native video ratio; never crop the QR. */
+
+
+header{height:76px;padding:10px 24px}header img{width:48px;height:48px}
+
+
+main{max-width:none;padding:0}.eyebrow{display:none}.layout{display:block}
+
+
+.camera{position:relative;width:100%;height:calc(100vh - 76px);height:calc(100svh - 76px);min-height:360px;border-radius:0;padding:0;background:#071b16;display:flex;align-items:center;justify-content:center}
+
+
+#reader{width:100%;max-width:calc((100svh - 76px)*var(--video-aspect,1.777778));min-height:0;border-radius:0;background:transparent;overflow:visible}
+
+
+#reader video{display:block;width:100%!important;height:auto!important;max-height:none;object-fit:contain}
+
+
+.camera-head{position:absolute;left:24px;right:24px;top:18px;margin:0;z-index:2;text-shadow:0 1px 5px #000}.camera-head span{background:#071b16c9;padding:8px 12px;border-radius:8px}
+
+
+.scan-overlay{position:absolute;left:24px;bottom:64px;width:min(650px,calc(100% - 48px));z-index:2;pointer-events:none}
+
+
+#status{min-height:0;padding:20px 28px;border-radius:18px;box-shadow:0 6px 30px #0003;color:#163c38;background:#fffffff2}
+
+
+#status .label{margin-bottom:6px;font-size:14px}#status .title{font-size:clamp(26px,3.5vw,48px);line-height:1.25}#status .title br{display:none}#status .detail{font-size:15px;margin-top:8px;line-height:1.5}#status .name{font-size:clamp(28px,3.8vw,50px)}#status .action{font-size:clamp(34px,4.4vw,58px)}
+
+
+#status[data-state="ready"],#status[data-state="preparing"]{background:#071b16c9;color:#fff;border-color:#ffffff38;box-shadow:none}#status[data-state="ready"] .detail,#status[data-state="preparing"] .detail{color:#d6e9dd}
+
+
+.camera-controls{position:absolute;bottom:14px;left:24px;right:24px;display:flex;gap:12px;align-items:center;z-index:3}#frameMsg{margin:0;background:#071b16c9;border-radius:8px;padding:6px 10px;color:#e6f2eb}#startBtn{width:auto;margin:0;flex-shrink:0}
+
+
+.tools-panel{max-width:900px;margin:0 auto;padding:16px 24px 24px}.manual{margin-top:10px}#setup{margin:0;border-radius:0;padding:12px 24px}footer{padding:0 24px 20px}
+
+
+@media(max-width:760px){header{height:64px;padding:8px 16px}header img{width:40px;height:40px}.camera{height:calc(100vh - 64px);height:calc(100svh - 64px);min-height:360px}#reader{max-width:calc((100svh - 64px)*var(--video-aspect,1.777778))}.camera-head{left:12px;right:12px;top:12px;font-size:11px}.camera-head span:last-child{display:none}.scan-overlay{left:12px;bottom:74px;width:calc(100% - 24px)}#status{padding:16px 20px;border-radius:14px}#status .detail{font-size:13px}.camera-controls{left:12px;right:12px;bottom:12px;flex-wrap:wrap;gap:6px}#frameMsg{font-size:12px}.tools-panel{padding:10px 16px 20px}}
+
+
+/* Picture-book walk, clipped inside the status card. */
+
+
+#status.has-mascot .status-copy{min-width:0}
+
+
+.tanemaki-lane{position:relative;overflow:hidden;width:100%;height:86px;margin-top:4px;pointer-events:none}
+
+
+.tanemaki-walker{position:absolute;bottom:0;width:80px;height:80px;left:-80px}
+
+
+.tanemaki-sprite{display:block;width:80px;height:80px;background-image:url('https://seed-create.github.io/seed-line/scan/assets/tanemaki-round-pixel-walk-v1.png');image-rendering:pixelated;background-size:200% 200%;background-repeat:no-repeat;animation:tanemaki-frames .64s steps(1,end) infinite}
+
+
+.tanemaki-lane[data-effect="loading"] .tanemaki-walker{animation:tanemaki-walk 3.8s linear infinite}
+
+
+.tanemaki-lane[data-effect="welcome"] .tanemaki-walker{animation:tanemaki-run .85s ease-in forwards}
+
+
+.tanemaki-lane[data-effect="welcome"] .tanemaki-sprite{animation-duration:.32s}
+
+
+@keyframes tanemaki-frames{0%{background-position:0 0}25%{background-position:100% 0}50%{background-position:0 100%}75%{background-position:100% 100%}}
+
+
+@keyframes tanemaki-walk{from{left:-80px}to{left:100%}}
+
+
+@keyframes tanemaki-run{from{left:var(--walk-start,30%)}to{left:100%}}
+
+
+#status[data-state="camera-wait"]{background:#071b16c9;color:#fff;border-color:#ffffff38;box-shadow:none}
+
+
+#status[data-state="camera-wait"] .detail{color:#d6e9dd}
+
+
+@media(prefers-reduced-motion:reduce){.tanemaki-lane *{animation:none!important}.tanemaki-walker{left:calc(50% - 40px)}.tanemaki-lane[data-effect="welcome"] .tanemaki-walker{visibility:hidden}}
+
+
+
+
+
 /* Tanemaki: gentle bounce, drifting leaves and tiny footsteps. */
 .tanemaki-lane{height:104px}
 .tanemaki-lane[data-effect="welcome"] .tanemaki-walker{animation:tanemaki-run .72s .58s ease-in forwards;left:var(--walk-start,30%)}
@@ -68,88 +170,258 @@ main{max-width:none;padding:0}.eyebrow{display:none}.layout{display:block}
 @keyframes tanemaki-spark{0%{opacity:0;transform:scale(.2)}35%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.3)}}
 @media(prefers-reduced-motion:reduce){.tanemaki-lane *,.tanemaki-lane *:before,.tanemaki-lane *:after{animation:none!important}.tanemaki-walker:before,.tanemaki-walker:after{display:none}.tanemaki-lane[data-effect="welcome"] .tanemaki-walker{visibility:hidden}}
 
-</style>
-</head>
-<body>
-<header><div class="brand"><img src="https://seed-create.github.io/seed-line/scan/seed-logo.png" alt=""><strong>学習塾SeeD</strong></div><span>入退室受付</span></header>
-<main>
-<div class="eyebrow">WELCOME TO SeeD</div>
-<div id="setup" hidden>この端末は設定が済んでいません。塾ランチャーの「入退室スキャナ」から開き直してください。</div>
-<div class="layout">
-<div class="camera">
-<div id="reader"></div>
-<div class="camera-head"><span><i></i>カメラ映像の全体で読み取れます</span><span>スマホ・カード対応</span></div>
-<div class="scan-overlay"><div id="status" data-state="preparing" role="status" aria-live="polite"><div class="label">準備中</div><h1 class="title">カメラを<br>準備しています</h1><p class="detail">まだ、かざさずにお待ちください。</p></div></div>
-<div class="camera-controls"><p id="frameMsg">カメラに接続しています</p><button id="startBtn" hidden>カメラを開始</button></div>
-</div>
-<section class="tools-panel"><div class="help"><strong>「読み取り完了」の合図で、スマホを下ろせます。</strong><br>入退室の記録とLINE通知は、そのあとに続きます。</div>
-<form class="manual" id="manual"><label for="code">手入力・USBスキャナ</label><div class="input-row"><input id="code" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="コードを入力"><button type="submit">読み取る</button></div></form>
-<div id="queue" aria-live="polite"></div>
-<p class="quiet">読み取り音を有効にするには、画面を一度タップしてください。<br>記録を確認できないときは、受付画面にお知らせします。</p></section>
-</div>
-</main><footer>学習塾SeeD · 毎日の「来たよ」を、確かに。</footer>
-<script>
-/* GENERATED_GAS_PRESET */
-var EXEC_URL='https://script.google.com/macros/s/AKfycbztDdOm_W6RlbxVj-TfG7zxjxhspaTkaGoDvY2qqy8o_enAMRWbtQi9RGNRyndZNLfE/exec';
-var st=document.getElementById('status'),frameMsg=document.getElementById('frameMsg'),codeEl=document.getElementById('code'),startBtn=document.getElementById('startBtn');
-var isGas=typeof GAS_PRESET!=='undefined',preset=isGas?GAS_PRESET:(new URLSearchParams(location.search).get('secret')||'');
-try{if(preset){localStorage.setItem('attendSecret',preset);if(localStorage.getItem('attendSecret')===preset){if(isGas){google.script.history.replace({}, {page:'checkin'}, '');}else{var clean=new URL(location.href);clean.searchParams.delete('secret');history.replaceState(null,'',clean.pathname+clean.search+clean.hash);}}}}catch(e){}
-function getSecret(){if(preset)return preset;try{return localStorage.getItem('attendSecret')||'';}catch(e){return '';}}
-function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-var actx=null;
-function unlockAudio(){try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume().catch(function(){});}catch(e){}}
-document.addEventListener('click',unlockAudio);document.addEventListener('keydown',unlockAudio);
-function tone(hz,ms){try{if(!actx||actx.state!=='running')return;var o=actx.createOscillator(),g=actx.createGain();o.frequency.value=hz;o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.16,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+ms/1000);o.start();o.stop(actx.currentTime+ms/1000);}catch(e){}}
-var tick='<span class="check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>読み取りました</span>';
-var resultTimer=null,resultDisplayVersion=0;
-function clearResultTimer(){resultDisplayVersion++;if(resultTimer!==null){clearTimeout(resultTimer);resultTimer=null;}}
-function dismissResultAfterDelay(){var version=resultDisplayVersion,receiptId=currentId;resultTimer=setTimeout(function(){if(version!==resultDisplayVersion||currentId!==receiptId)return;resultTimer=null;currentId=null;ready();},2000);}
-// Picture-book Tanemaki, four walking frames; decorative, no attendance API.
-var tanemakiWalkStarted=0;
-function decorateAttendanceStatus(effect){
-  st.classList.toggle('has-mascot',!!effect);
-  if(!effect){tanemakiWalkStarted=0;return;}
-  if(effect==='loading'&&!tanemakiWalkStarted)tanemakiWalkStarted=Date.now();
-  st.innerHTML='<div class="status-copy">'+st.innerHTML+'</div><div class="tanemaki-lane" data-effect="'+effect+'" aria-hidden="true"><span class="tanemaki-walker"><span class="tanemaki-sprite"></span></span></div>';
-  if(effect==='welcome'){
-    var lane=st.querySelector('.tanemaki-lane');
-    var phase=tanemakiWalkStarted?((Date.now()-tanemakiWalkStarted)%3800)/3800:.3;
-    lane.style.setProperty('--walk-start',(-80+phase*(lane.clientWidth+80))+'px');
-    tanemakiWalkStarted=0;
-  }
-}
-
-function state(kind,label,title,detail){clearResultTimer();st.dataset.state=kind;st.innerHTML='<div class="label">'+label+'</div><h1 class="title">'+title+'</h1><p class="detail">'+detail+'</p>';decorateAttendanceStatus(kind==='preparing'||kind==='read'?'loading':'');}
-function ready(){state('ready','受付中','QRをかざしてください','読み取れたら、すぐにお知らせします。');}
-var entries=[],currentId=null,sending=false,seen=Object.create(null),_i=0;
-try{entries=JSON.parse(sessionStorage.getItem('seedAttendanceOutbox')||'[]').filter(function(x){return x&&typeof x.code==='string'&&/^[\w-]{16,80}$/.test(x.id);}).map(function(x){return{id:x.id,code:x.code,state:'uncertain'};});}catch(e){entries=[];}
-function save(){try{sessionStorage.setItem('seedAttendanceOutbox',JSON.stringify(entries.filter(function(x){return x.state!=='done';}).map(function(x){return {id:x.id,code:x.code};})));}catch(e){}}
-function receipts(){var list=entries.slice(-8);var outstanding=entries.filter(function(x){return x.state!=='done';});list=outstanding.concat(list.filter(function(x){return x.state==='done';}));document.getElementById('queue').innerHTML=list.length?'<div class="queue-title">受付の記録</div>'+list.map(function(x){var r=x.result;var title=r&&r.name?esc(r.name)+' さん · '+esc(r.type||'')+(r.cooldown?'済み':''):('読み取り '+esc(x.number||''));var msg=x.state==='done'?'記録済み':x.state==='uncertain'?'受付で再確認':x.state==='error'?'受付で再確認':'読み取り済み · 記録を確認しています';return '<div class="receipt '+''+'"><div>'+title+'<small>'+msg+'</small></div>'+((x.state==='uncertain'||x.state==='error')?'<button data-retry="'+esc(x.id)+'">再確認</button>':'')+'</div>';}).join(''):'';}
-document.getElementById('queue').addEventListener('click',function(e){var id=e.target.getAttribute('data-retry');if(!id)return;var x=entries.find(function(x){return x.id===id;});if(x){clearResultTimer();x.state='queued';currentId=x.id;save();receipts();state('read',tick,'記録を確認しています','もう一度QRをかざす必要はありません。');pump();}});
-function transport(x,cb){var finished=false,timer;function finish(r){if(finished)return;finished=true;clearTimeout(timer);cb(r);}
- timer=setTimeout(function(){finish({uncertain:true,message:'通信の確認が必要です'});},20000);
- if(isGas){google.script.run.withSuccessHandler(finish).withFailureHandler(function(){finish({uncertain:true});}).apiCheckin(getSecret(),x.code,x.id);return;}
- var name='__seedAttendance'+(++_i),s=document.createElement('script');function cleanup(){if(s.parentNode)s.parentNode.removeChild(s);window[name]=function(){};setTimeout(function(){delete window[name];},60000);}
- window[name]=function(r){cleanup();finish(r);};s.onerror=function(){cleanup();finish({uncertain:true});};s.referrerPolicy='no-referrer';s.src=EXEC_URL+'?'+new URLSearchParams({action:'checkin',code:x.code,secret:getSecret(),requestId:x.id,callback:name});document.body.appendChild(s);
- setTimeout(cleanup,21000);
-}
-function showResult(x){clearResultTimer();var r=x.result;if(x.state!=='done'){currentId=null;ready();return;}var kind=r.type==='退室'?'out':'in';st.dataset.state=kind;st.innerHTML='<div class="label">'+(r.cooldown?'すでに記録済みです':'記録しました')+'</div><div class="name">'+esc(r.name)+'<small>さん</small></div><div class="action">'+esc(r.type)+(r.cooldown?'済み':'完了')+'</div><p class="detail">'+(r.type==='退室'?'おつかれさまでした。':'今日も、一歩ずつ。')+'</p>';decorateAttendanceStatus(!r.cooldown?(r.type==='入室'?'welcome':'farewell'):'');dismissResultAfterDelay();}
-function pump(){if(sending)return;var x=entries.find(function(x){return x.state==='queued';});if(!x)return;sending=true;x.state='sending';save();receipts();transport(x,function(r){sending=false;if(r&&(r.ok||r.cooldown)){x.state='done';x.result=r;delete x.code;tone(880,90);}else{x.state=r&&r.uncertain?'uncertain':'error';x.message=r&&r.message||'通信の確認が必要です';}save();receipts();if(currentId===x.id)showResult(x);pump();});}
-function submit(code){code=String(code||'').trim();if(!code)return;if(!getSecret()){document.getElementById('setup').hidden=false;state('error','端末の設定','ランチャーから<br>開き直してください','受付の設定を確認してください。');return;}
- var key=code.toLowerCase(),pending=entries.find(function(x){return x.code&&x.code.toLowerCase()===key&&x.state!=='done';});if(pending){currentId=pending.id;if(pending.state==='uncertain'||pending.state==='error'){pending.state='queued';save();receipts();tone(660,40);state('read',tick,'読み取り完了 ✓','同じ受付の記録を確認しています。もう、かざす必要はありません。');pump();}else state('read',tick,'読み取り完了 ✓','読み取り済みです。そのまま記録を続けています。');return;}
- var recent=entries.find(function(x){return x.key===key&&x.state==='done'&&Date.now()-x.at<60000;});if(recent){currentId=recent.id;showResult({state:'done',result:Object.assign({},recent.result,{cooldown:true})});return;}
- var id=crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+'-'+Array.from(crypto.getRandomValues(new Uint32Array(4))).map(function(n){return n.toString(36);}).join('-');var x={id:id,code:code,key:key,at:Date.now(),number:entries.length+1,state:'queued'};entries.push(x);currentId=id;save();tone(660,40);state('read',tick,'読み取り完了 ✓','入退室を記録しています。もう、かざす必要はありません。');receipts();pump();}
-function onDecoded(text){var code=String(text||'').trim();if(!code)return;var key=code.toLowerCase(),now=Date.now(),lastSeen=seen[key];seen[key]=now;if(lastSeen&&now-lastSeen<1800)return;submit(code);}
-document.getElementById('manual').addEventListener('submit',function(e){e.preventDefault();unlockAudio();var c=codeEl.value;codeEl.value='';submit(c);});
-var qr=null,starting=false,camStarted=false,camAttempt=0;
-function tuneTrack(){try{var v=document.querySelector('#reader video');if(v){var fit=function(){if(v.videoWidth&&v.videoHeight)document.getElementById('reader').style.setProperty('--video-aspect',String(v.videoWidth/v.videoHeight));};v.addEventListener('resize',fit);fit();}var t=v&&v.srcObject&&v.srcObject.getVideoTracks()[0];if(t&&t.applyConstraints)t.applyConstraints({width:{ideal:1920},height:{ideal:1080},advanced:[{focusMode:'continuous'}]}).catch(function(){t.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(function(){});});}catch(e){}}
-function camError(){frameMsg.textContent='手入力・USBスキャナも使えます';if(!currentId)state('camera-wait','カメラの準備','カメラを開始してください','下のボタンから開始できます。');startBtn.hidden=false;startBtn.textContent=starting?'ページを開き直す':'カメラを開始';}
-function startCamera(){unlockAudio();if(starting){location.reload();return;}if(camStarted)return;starting=true;startBtn.hidden=true;var attempt=++camAttempt;frameMsg.textContent='カメラに接続しています';if(!currentId)state('preparing','準備中','カメラを準備しています','まだ、かざさずにお待ちください。');var watchdog=setTimeout(function(){if(attempt===camAttempt&&starting)camError();},6000);
- try{if(!qr)qr=new Html5Qrcode('reader',{formatsToSupport:[Html5QrcodeSupportedFormats.QR_CODE],verbose:false});var cfg={fps:30,disableFlip:true,experimentalFeatures:{useBarCodeDetectorIfSupported:true}};
- var devices=Html5Qrcode.getCameras().catch(function(){return [];});devices.then(function(d){return qr.start(d&&d.length?d[d.length-1].id:{facingMode:'environment'},cfg,onDecoded,function(){});}).then(function(){clearTimeout(watchdog);starting=false;camStarted=true;startBtn.hidden=true;frameMsg.textContent='カメラにQRをかざしてください';if(!currentId)ready();tuneTrack();}).catch(function(){clearTimeout(watchdog);starting=false;camError();});
- }catch(e){clearTimeout(watchdog);starting=false;camError();}}
-startBtn.addEventListener('click',startCamera);receipts();
-window.addEventListener('beforeunload',function(e){if(entries.some(function(x){return x.state!=='done';})){e.preventDefault();e.returnValue='';}});
-if(getSecret())startCamera();else{document.getElementById('setup').hidden=false;frameMsg.textContent='端末の設定を確認してください';state('error','端末の設定','ランチャーから<br>開き直してください','設定すると、次回からそのまま使えます。');}
-</script>
-</body></html>
+</style>
+
+
+</head>
+
+
+<body>
+
+
+<header><div class="brand"><img src="https://seed-create.github.io/seed-line/scan/seed-logo.png" alt=""><strong>学習塾SeeD</strong></div><span>入退室受付</span></header>
+
+
+<main>
+
+
+<div class="eyebrow">WELCOME TO SeeD</div>
+
+
+<div id="setup" hidden>この端末は設定が済んでいません。塾ランチャーの「入退室スキャナ」から開き直してください。</div>
+
+
+<div class="layout">
+
+
+<div class="camera">
+
+
+<div id="reader"></div>
+
+
+<div class="camera-head"><span><i></i>カメラ映像の全体で読み取れます</span><span>スマホ・カード対応</span></div>
+
+
+<div class="scan-overlay"><div id="status" data-state="preparing" role="status" aria-live="polite"><div class="label">準備中</div><h1 class="title">カメラを<br>準備しています</h1><p class="detail">まだ、かざさずにお待ちください。</p></div></div>
+
+
+<div class="camera-controls"><p id="frameMsg">カメラに接続しています</p><button id="startBtn" hidden>カメラを開始</button></div>
+
+
+</div>
+
+
+<section class="tools-panel"><div class="help"><strong>「読み取り完了」の合図で、スマホを下ろせます。</strong><br>入退室の記録とLINE通知は、そのあとに続きます。</div>
+
+
+<form class="manual" id="manual"><label for="code">手入力・USBスキャナ</label><div class="input-row"><input id="code" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="コードを入力"><button type="submit">読み取る</button></div></form>
+
+
+<div id="queue" aria-live="polite"></div>
+
+
+<p class="quiet">読み取り音を有効にするには、画面を一度タップしてください。<br>記録を確認できないときは、受付画面にお知らせします。</p></section>
+
+
+</div>
+
+
+</main><footer>学習塾SeeD · 毎日の「来たよ」を、確かに。</footer>
+
+
+<script>
+
+
+/* GENERATED_GAS_PRESET */
+
+
+var EXEC_URL='https://script.google.com/macros/s/AKfycbztDdOm_W6RlbxVj-TfG7zxjxhspaTkaGoDvY2qqy8o_enAMRWbtQi9RGNRyndZNLfE/exec';
+
+
+var st=document.getElementById('status'),frameMsg=document.getElementById('frameMsg'),codeEl=document.getElementById('code'),startBtn=document.getElementById('startBtn');
+
+
+var isGas=typeof GAS_PRESET!=='undefined',preset=isGas?GAS_PRESET:(new URLSearchParams(location.search).get('secret')||'');
+
+
+try{if(preset){localStorage.setItem('attendSecret',preset);if(localStorage.getItem('attendSecret')===preset){if(isGas){google.script.history.replace({}, {page:'checkin'}, '');}else{var clean=new URL(location.href);clean.searchParams.delete('secret');history.replaceState(null,'',clean.pathname+clean.search+clean.hash);}}}}catch(e){}
+
+
+function getSecret(){if(preset)return preset;try{return localStorage.getItem('attendSecret')||'';}catch(e){return '';}}
+
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+
+var actx=null;
+
+
+function unlockAudio(){try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume().catch(function(){});}catch(e){}}
+
+
+document.addEventListener('click',unlockAudio);document.addEventListener('keydown',unlockAudio);
+
+
+function tone(hz,ms){try{if(!actx||actx.state!=='running')return;var o=actx.createOscillator(),g=actx.createGain();o.frequency.value=hz;o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.16,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+ms/1000);o.start();o.stop(actx.currentTime+ms/1000);}catch(e){}}
+
+
+var tick='<span class="check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>読み取りました</span>';
+
+
+var resultTimer=null,resultDisplayVersion=0;
+
+
+function clearResultTimer(){resultDisplayVersion++;if(resultTimer!==null){clearTimeout(resultTimer);resultTimer=null;}}
+
+
+function dismissResultAfterDelay(){var version=resultDisplayVersion,receiptId=currentId;resultTimer=setTimeout(function(){if(version!==resultDisplayVersion||currentId!==receiptId)return;resultTimer=null;currentId=null;ready();},2000);}
+
+
+// Picture-book Tanemaki, four walking frames; decorative, no attendance API.
+
+
+var tanemakiWalkStarted=0;
+
+
+function decorateAttendanceStatus(effect){
+
+
+  st.classList.toggle('has-mascot',!!effect);
+
+
+  if(!effect){tanemakiWalkStarted=0;return;}
+
+
+  if(effect==='loading'&&!tanemakiWalkStarted)tanemakiWalkStarted=Date.now();
+
+
+  st.innerHTML='<div class="status-copy">'+st.innerHTML+'</div><div class="tanemaki-lane" data-effect="'+effect+'" aria-hidden="true"><span class="tanemaki-walker"><span class="tanemaki-sprite"></span></span></div>';
+
+
+  if(effect==='welcome'){
+
+
+    var lane=st.querySelector('.tanemaki-lane');
+
+
+    var phase=tanemakiWalkStarted?((Date.now()-tanemakiWalkStarted)%3800)/3800:.3;
+
+
+    lane.style.setProperty('--walk-start',Math.max(0,Math.min(lane.clientWidth-80,(-80+phase*(lane.clientWidth+80))))+'px');
+
+
+    tanemakiWalkStarted=0;
+
+
+  }
+
+
+}
+
+
+
+
+
+function state(kind,label,title,detail){clearResultTimer();st.dataset.state=kind;st.innerHTML='<div class="label">'+label+'</div><h1 class="title">'+title+'</h1><p class="detail">'+detail+'</p>';decorateAttendanceStatus(kind==='preparing'||kind==='read'?'loading':'');}
+
+
+function ready(){state('ready','受付中','QRをかざしてください','読み取れたら、すぐにお知らせします。');}
+
+
+var entries=[],currentId=null,sending=false,seen=Object.create(null),_i=0;
+
+
+try{entries=JSON.parse(sessionStorage.getItem('seedAttendanceOutbox')||'[]').filter(function(x){return x&&typeof x.code==='string'&&/^[\w-]{16,80}$/.test(x.id);}).map(function(x){return{id:x.id,code:x.code,state:'uncertain'};});}catch(e){entries=[];}
+
+
+function save(){try{sessionStorage.setItem('seedAttendanceOutbox',JSON.stringify(entries.filter(function(x){return x.state!=='done';}).map(function(x){return {id:x.id,code:x.code};})));}catch(e){}}
+
+
+function receipts(){var list=entries.slice(-8);var outstanding=entries.filter(function(x){return x.state!=='done';});list=outstanding.concat(list.filter(function(x){return x.state==='done';}));document.getElementById('queue').innerHTML=list.length?'<div class="queue-title">受付の記録</div>'+list.map(function(x){var r=x.result;var title=r&&r.name?esc(r.name)+' さん · '+esc(r.type||'')+(r.cooldown?'済み':''):('読み取り '+esc(x.number||''));var msg=x.state==='done'?'記録済み':x.state==='uncertain'?'受付で再確認':x.state==='error'?'受付で再確認':'読み取り済み · 記録を確認しています';return '<div class="receipt '+''+'"><div>'+title+'<small>'+msg+'</small></div>'+((x.state==='uncertain'||x.state==='error')?'<button data-retry="'+esc(x.id)+'">再確認</button>':'')+'</div>';}).join(''):'';}
+
+
+document.getElementById('queue').addEventListener('click',function(e){var id=e.target.getAttribute('data-retry');if(!id)return;var x=entries.find(function(x){return x.id===id;});if(x){clearResultTimer();x.state='queued';currentId=x.id;save();receipts();state('read',tick,'記録を確認しています','もう一度QRをかざす必要はありません。');pump();}});
+
+
+function transport(x,cb){var finished=false,timer;function finish(r){if(finished)return;finished=true;clearTimeout(timer);cb(r);}
+
+
+ timer=setTimeout(function(){finish({uncertain:true,message:'通信の確認が必要です'});},20000);
+
+
+ if(isGas){google.script.run.withSuccessHandler(finish).withFailureHandler(function(){finish({uncertain:true});}).apiCheckin(getSecret(),x.code,x.id);return;}
+
+
+ var name='__seedAttendance'+(++_i),s=document.createElement('script');function cleanup(){if(s.parentNode)s.parentNode.removeChild(s);window[name]=function(){};setTimeout(function(){delete window[name];},60000);}
+
+
+ window[name]=function(r){cleanup();finish(r);};s.onerror=function(){cleanup();finish({uncertain:true});};s.referrerPolicy='no-referrer';s.src=EXEC_URL+'?'+new URLSearchParams({action:'checkin',code:x.code,secret:getSecret(),requestId:x.id,callback:name});document.body.appendChild(s);
+
+
+ setTimeout(cleanup,21000);
+
+
+}
+
+
+function showResult(x){clearResultTimer();var r=x.result;if(x.state!=='done'){currentId=null;ready();return;}var kind=r.type==='退室'?'out':'in';st.dataset.state=kind;st.innerHTML='<div class="label">'+(r.cooldown?'すでに記録済みです':'記録しました')+'</div><div class="name">'+esc(r.name)+'<small>さん</small></div><div class="action">'+esc(r.type)+(r.cooldown?'済み':'完了')+'</div><p class="detail">'+(r.type==='退室'?'おつかれさまでした。':'今日も、一歩ずつ。')+'</p>';decorateAttendanceStatus(!r.cooldown?(r.type==='入室'?'welcome':'farewell'):'');dismissResultAfterDelay();}
+
+
+function pump(){if(sending)return;var x=entries.find(function(x){return x.state==='queued';});if(!x)return;sending=true;x.state='sending';save();receipts();transport(x,function(r){sending=false;if(r&&(r.ok||r.cooldown)){x.state='done';x.result=r;delete x.code;tone(880,90);}else{x.state=r&&r.uncertain?'uncertain':'error';x.message=r&&r.message||'通信の確認が必要です';}save();receipts();if(currentId===x.id)showResult(x);pump();});}
+
+
+function submit(code){code=String(code||'').trim();if(!code)return;if(!getSecret()){document.getElementById('setup').hidden=false;state('error','端末の設定','ランチャーから<br>開き直してください','受付の設定を確認してください。');return;}
+
+
+ var key=code.toLowerCase(),pending=entries.find(function(x){return x.code&&x.code.toLowerCase()===key&&x.state!=='done';});if(pending){currentId=pending.id;if(pending.state==='uncertain'||pending.state==='error'){pending.state='queued';save();receipts();tone(660,40);state('read',tick,'読み取り完了 ✓','同じ受付の記録を確認しています。もう、かざす必要はありません。');pump();}else state('read',tick,'読み取り完了 ✓','読み取り済みです。そのまま記録を続けています。');return;}
+
+
+ var recent=entries.find(function(x){return x.key===key&&x.state==='done'&&Date.now()-x.at<60000;});if(recent){currentId=recent.id;showResult({state:'done',result:Object.assign({},recent.result,{cooldown:true})});return;}
+
+
+ var id=crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+'-'+Array.from(crypto.getRandomValues(new Uint32Array(4))).map(function(n){return n.toString(36);}).join('-');var x={id:id,code:code,key:key,at:Date.now(),number:entries.length+1,state:'queued'};entries.push(x);currentId=id;save();tone(660,40);state('read',tick,'読み取り完了 ✓','入退室を記録しています。もう、かざす必要はありません。');receipts();pump();}
+
+
+function onDecoded(text){var code=String(text||'').trim();if(!code)return;var key=code.toLowerCase(),now=Date.now(),lastSeen=seen[key];seen[key]=now;if(lastSeen&&now-lastSeen<1800)return;submit(code);}
+
+
+document.getElementById('manual').addEventListener('submit',function(e){e.preventDefault();unlockAudio();var c=codeEl.value;codeEl.value='';submit(c);});
+
+
+var qr=null,starting=false,camStarted=false,camAttempt=0;
+
+
+function tuneTrack(){try{var v=document.querySelector('#reader video');if(v){var fit=function(){if(v.videoWidth&&v.videoHeight)document.getElementById('reader').style.setProperty('--video-aspect',String(v.videoWidth/v.videoHeight));};v.addEventListener('resize',fit);fit();}var t=v&&v.srcObject&&v.srcObject.getVideoTracks()[0];if(t&&t.applyConstraints)t.applyConstraints({width:{ideal:1920},height:{ideal:1080},advanced:[{focusMode:'continuous'}]}).catch(function(){t.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(function(){});});}catch(e){}}
+
+
+function camError(){frameMsg.textContent='手入力・USBスキャナも使えます';if(!currentId)state('camera-wait','カメラの準備','カメラを開始してください','下のボタンから開始できます。');startBtn.hidden=false;startBtn.textContent=starting?'ページを開き直す':'カメラを開始';}
+
+
+function startCamera(){unlockAudio();if(starting){location.reload();return;}if(camStarted)return;starting=true;startBtn.hidden=true;var attempt=++camAttempt;frameMsg.textContent='カメラに接続しています';if(!currentId)state('preparing','準備中','カメラを準備しています','まだ、かざさずにお待ちください。');var watchdog=setTimeout(function(){if(attempt===camAttempt&&starting)camError();},6000);
+
+
+ try{if(!qr)qr=new Html5Qrcode('reader',{formatsToSupport:[Html5QrcodeSupportedFormats.QR_CODE],verbose:false});var cfg={fps:30,disableFlip:true,experimentalFeatures:{useBarCodeDetectorIfSupported:true}};
+
+
+ var devices=Html5Qrcode.getCameras().catch(function(){return [];});devices.then(function(d){return qr.start(d&&d.length?d[d.length-1].id:{facingMode:'environment'},cfg,onDecoded,function(){});}).then(function(){clearTimeout(watchdog);starting=false;camStarted=true;startBtn.hidden=true;frameMsg.textContent='カメラにQRをかざしてください';if(!currentId)ready();tuneTrack();}).catch(function(){clearTimeout(watchdog);starting=false;camError();});
+
+
+ }catch(e){clearTimeout(watchdog);starting=false;camError();}}
+
+
+startBtn.addEventListener('click',startCamera);receipts();
+
+
+window.addEventListener('beforeunload',function(e){if(entries.some(function(x){return x.state!=='done';})){e.preventDefault();e.returnValue='';}});
+
+
+if(getSecret())startCamera();else{document.getElementById('setup').hidden=false;frameMsg.textContent='端末の設定を確認してください';state('error','端末の設定','ランチャーから<br>開き直してください','設定すると、次回からそのまま使えます。');}
+
+
+</script>
+
+
+</body></html>
+
+
