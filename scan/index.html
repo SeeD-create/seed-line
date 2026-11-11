@@ -193,7 +193,7 @@ var resultTimer=null,resultDisplayVersion=0;
 
 function clearResultTimer(){resultDisplayVersion++;if(resultTimer!==null){clearTimeout(resultTimer);resultTimer=null;}}
 
-function dismissResultAfterDelay(){var version=resultDisplayVersion,receiptId=currentId;resultTimer=setTimeout(function(){if(version!==resultDisplayVersion||currentId!==receiptId)return;resultTimer=null;currentId=null;ready();},2000);}
+function dismissResultAfterDelay(delayMs){var version=resultDisplayVersion,receiptId=currentId;resultTimer=setTimeout(function(){if(version!==resultDisplayVersion||currentId!==receiptId)return;resultTimer=null;currentId=null;ready();},delayMs||2000);}
 
 // Picture-book Tanemaki, four walking frames; decorative, no attendance API.
 
@@ -273,6 +273,8 @@ function transport(x,cb){
 function showResult(x){clearResultTimer();var r=x.result;if(x.state!=='done'){
   currentId=null;
   state('error','記録の確認が必要です','入退室を確認できませんでした',esc(x.message||'通信の応答がありません。同じ受付を再確認してください。'));
+  // Close only the large status card. The durable receipt and its retry button stay below.
+  dismissResultAfterDelay(5000);
   if(x.state==='expired')return;var retry=document.createElement('button');retry.type='button';retry.className='retry-current';retry.textContent='この読み取りを再確認';
   retry.addEventListener('click',function(){x.state='queued';currentId=x.id;save();receipts();state('read',tick,'記録を再確認しています','もう一度QRをかざす必要はありません。');pump();});st.appendChild(retry);tone(220,150);return;
  }var kind=r.type==='退室'?'out':'in';st.dataset.state=kind;st.innerHTML='<div class="label">'+(r.cooldown?'すでに記録済みです':'記録しました')+'</div><div class="name">'+esc(r.name)+'<small>さん</small></div><div class="action">'+esc(r.type)+(r.cooldown?'済み':'完了')+'</div><p class="detail">'+(r.type==='退室'?'おつかれさまでした。':'今日も、一歩ずつ。')+'</p>';decorateAttendanceStatus(!r.cooldown?(r.type==='入室'?'welcome':'farewell'):'');dismissResultAfterDelay();}
