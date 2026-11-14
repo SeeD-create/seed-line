@@ -177,6 +177,56 @@ try{if(preset){localStorage.setItem('attendSecret',preset);if(localStorage.getIt
 
 function getSecret(){if(preset)return preset;try{return localStorage.getItem('attendSecret')||'';}catch(e){return '';}}
 
+// No credentials or scan data are placed in the iframe URL or persisted here.
+function seedCreateAttendanceRpc(execUrl) {
+ if(location.origin!=='https://seed-create.github.io')return null;
+ var frame=null,peer=null,peerOrigin='',channel='',startupTimer=null,pending=Object.create(null);
+ function id(){return crypto.randomUUID?crypto.randomUUID():Array.from(crypto.getRandomValues(new Uint32Array(8))).map(function(n){return n.toString(36);}).join('-');}
+ function closeFrame(){if(startupTimer)clearTimeout(startupTimer);startupTimer=null;if(frame)frame.remove();frame=null;peer=null;peerOrigin='';}
+ function start(){
+  if(frame)return;
+  channel=id();frame=document.createElement('iframe');frame.hidden=true;frame.setAttribute('aria-hidden','true');frame.title='SeeD scanner transport';frame.referrerPolicy='no-referrer';
+  // Modern browsers can load this public transport without Google login cookies.
+  frame.setAttribute('credentialless','');
+  frame.src=execUrl+'?'+new URLSearchParams({page:'attendance-bridge',origin:location.origin,channel:channel});
+  document.body.appendChild(frame);
+  startupTimer=setTimeout(function(){if(!peer)closeFrame();},30000);
+ }
+ function fromOwnedFrame(source){
+  try{for(var i=0;i<6&&source;i++){if(source===frame.contentWindow)return true;var next=source.parent;if(next===source)break;source=next;}}catch(ignore){}
+  return false;
+ }
+ function trustedOrigin(origin){return /^https:\/\/([a-z0-9-]+\.)?googleusercontent\.com$/.test(origin);}
+ window.addEventListener('message',function(event){
+  var d=event.data;
+  if(!frame||!d||d.v!==1||d.channel!==channel||!trustedOrigin(event.origin)||!fromOwnedFrame(event.source))return;
+  if(d.type==='seed-attendance-ready'){
+   if(peer&&peer!==event.source)return;
+   peer=event.source;peerOrigin=event.origin;if(startupTimer)clearTimeout(startupTimer);startupTimer=null;return;
+  }
+  if(d.type!=='seed-attendance-result'||event.source!==peer||event.origin!==peerOrigin)return;
+  var request=pending[d.id];if(!request)return;delete pending[d.id];
+  if(d.transportError||!d.result||typeof d.result.ok!=='boolean'){
+   peer=null;request.failure();if(!Object.keys(pending).length){closeFrame();start();}
+  }else request.success(d.result);
+ });
+ start();
+ return {
+  ready:function(){return !!peer;},
+  call:function(operation,args,success,failure){
+   if(!peer){if(!frame)start();return null;}
+   var requestId=id(),message={type:'seed-attendance-call',v:1,channel:channel,id:requestId,operation:operation};
+   Object.keys(args||{}).forEach(function(k){if(['secret','code','requestId','scannedAt'].indexOf(k)>=0)message[k]=args[k];});
+   pending[requestId]={success:success,failure:failure};
+   try{peer.postMessage(message,peerOrigin);}catch(ignore){delete pending[requestId];peer=null;return null;}
+   return function(){delete pending[requestId];};
+  }
+ };
+}
+
+var attendanceRpc=isGas?null:seedCreateAttendanceRpc(EXEC_URL);
+
+
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 
 var actx=null;
@@ -251,13 +301,15 @@ function receipts(){var list=entries.slice(-8);var outstanding=entries.filter(fu
 document.getElementById('queue').addEventListener('click',function(e){var id=e.target.getAttribute('data-retry');if(!id)return;var x=entries.find(function(x){return x.id===id;});if(x){clearResultTimer();x.state='queued';currentId=x.id;save();receipts();state('read',tick,'記録を確認しています','もう一度QRをかざす必要はありません。');pump();}});
 
 function transport(x,cb){
- var finished=false,controller=typeof AbortController==='function'?new AbortController():null;
+ var finished=false,cancelRpc=null,controller=typeof AbortController==='function'?new AbortController():null;
  var timer=setTimeout(function(){finish({uncertain:true,message:'通信の応答がありません。同じ読み取りを再確認してください。'});if(controller)controller.abort();},25000);
- function finish(r){if(finished)return;finished=true;clearTimeout(timer);cb(r);}
+ function finish(r){if(finished)return;finished=true;clearTimeout(timer);if(cancelRpc)cancelRpc();cb(r);}
  try{
   if(isGas){google.script.run.withSuccessHandler(finish).withFailureHandler(function(){finish({uncertain:true,message:'サーバーの応答を確認できません。同じ読み取りを再確認してください。'});}).apiCheckin(getSecret(),x.code,x.id,Number(x.at)||0);return;}
   // Omit Google login cookies: multi-account redirects can otherwise return a
   // Google Drive error page instead of the public Apps Script response.
+  function fetchReceipt(){
+   if(finished)return;
   var callback='seedReceipt';
   var url=EXEC_URL+'?'+new URLSearchParams({action:'checkin',code:x.code,secret:getSecret(),requestId:x.id,scannedAt:String(Number(x.at)||0),callback:callback});
   var options={method:'GET',credentials:'omit',redirect:'follow',referrerPolicy:'no-referrer'};
@@ -267,6 +319,9 @@ function transport(x,cb){
    if(text.slice(0,prefix.length)!==prefix||text.slice(-2)!==');')throw new Error('Unexpected response');
    finish(JSON.parse(text.slice(prefix.length,-2)));
   }).catch(function(){finish({uncertain:true,message:'通信を確認できません。同じ読み取りを再確認してください。'});});
+  }
+  if(attendanceRpc)cancelRpc=attendanceRpc.call('scan',{secret:getSecret(),code:x.code,requestId:x.id,scannedAt:Number(x.at)||0},finish,fetchReceipt);
+  if(!cancelRpc)fetchReceipt();
  }catch(err){finish({uncertain:true,message:'通信を開始できません。同じ読み取りを再確認してください。'});}
 }
 
@@ -363,10 +418,14 @@ window.addEventListener('pageshow',function(event){if(event.persisted&&getSecret
 var setupForm=document.getElementById('setupForm'),setupMessage=document.getElementById('setupMessage');
 function verifySetupKey(key){
  return new Promise(function(resolve,reject){
-  var timeout=setTimeout(function(){reject(new Error('通信の応答がありません。時間をおいて設定してください。'));},25000);
-  function done(value){clearTimeout(timeout);resolve(value);}function bad(){clearTimeout(timeout);reject(new Error('接続できません。インターネット接続を確認してください。'));}
+  var cancelStatus=null,timeout=setTimeout(function(){if(cancelStatus)cancelStatus();reject(new Error('通信の応答がありません。時間をおいて設定してください。'));},25000);
+  function done(value){clearTimeout(timeout);if(cancelStatus)cancelStatus();resolve(value);}function bad(){clearTimeout(timeout);if(cancelStatus)cancelStatus();reject(new Error('接続できません。インターネット接続を確認してください。'));}
   if(isGas){try{google.script.run.withSuccessHandler(done).withFailureHandler(bad).apiAttendanceStatus(key);}catch(e){bad();}return;}
+  function fetchStatus(){
   fetch(EXEC_URL+'?'+new URLSearchParams({action:'checkin',operation:'queueStatus',secret:key,callback:'seedSetup'}),{credentials:'omit',referrerPolicy:'no-referrer'}).then(function(r){if(!r.ok)throw new Error();return r.text();}).then(function(text){text=text.trim();if(text.slice(0,10)!=='seedSetup('||text.slice(-2)!==');')throw new Error();done(JSON.parse(text.slice(10,-2)));}).catch(bad);
+  }
+  if(attendanceRpc)cancelStatus=attendanceRpc.call('status',{secret:key},done,fetchStatus);
+  if(!cancelStatus)fetchStatus();
  });
 }
 setupForm.addEventListener('submit',function(event){
