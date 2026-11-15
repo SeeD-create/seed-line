@@ -214,59 +214,69 @@
 </div>
 
 <script>
-  var P = new URLSearchParams(location.search);
-  var UID = P.get('uid') || '', TOKEN = P.get('t') || '';
-  var EXEC = 'https://script.google.com/macros/s/AKfycbztDdOm_W6RlbxVj-TfG7zxjxhspaTkaGoDvY2qqy8o_enAMRWbtQi9RGNRyndZNLfE/exec';
-  function jsonp(params, cb){
-    var name = 'seedcb' + Math.floor(performance.now()*1000) + Math.floor(Math.random()*1e6);
-    window[name] = function(res){ try{ cb(res); } finally { delete window[name]; } };
-    var s = document.createElement('script');
-    s.src = EXEC + '?' + params + '&callback=' + name;
-    s.onerror = function(){ cb({ ok:false, message:'通信に失敗しました。' }); };
-    document.body.appendChild(s);
+var P = new URLSearchParams(location.search);
+var UID = P.get('uid') || '', TOKEN = P.get('t') || '';
+var EXEC = 'https://script.google.com/macros/s/AKfycbztDdOm_W6RlbxVj-TfG7zxjxhspaTkaGoDvY2qqy8o_enAMRWbtQi9RGNRyndZNLfE/exec';
+// 共通UI。本人確認が成功するまで送信させず、通信失敗でも保存済みと表示しない。
+var ck = document.getElementById('ck'), btn = document.getElementById('agree'),
+    hint = document.getElementById('hint'), bottomSeen = false, opened = false,
+    sending = false, version = '', openError = '';
+function jsonp(params, cb) {
+  var name = 'seedcb' + Date.now() + Math.floor(Math.random() * 1e6);
+  var s = document.createElement('script'), finished = false;
+  function finish(res) {
+    if (finished) return;
+    finished = true; clearTimeout(timer); s.remove();
+    window[name] = function() {}; setTimeout(function() { delete window[name]; }, 60000);
+    cb(res || { ok: false });
   }
-  jsonp('action=consent_open&uid=' + encodeURIComponent(UID) + '&t=' + encodeURIComponent(TOKEN),
-    function(r){ if (r && r.version) document.getElementById('ver').textContent = r.version; });
-  var ck = document.getElementById('ck'), btn = document.getElementById('agree'),
-      hint = document.getElementById('hint'), bottomSeen = false;
-
-  function atBottom() {
-    var el = document.documentElement;
-    return (window.innerHeight + window.scrollY) >= (el.scrollHeight - 60);
+  var timer = setTimeout(function() { finish({ ok: false, message: '通信に時間がかかっています。ページを開き直してご確認ください。' }); }, 25000);
+  window[name] = finish;
+  s.onerror = function() { finish({ ok: false, message: '通信に失敗しました。ページを開き直してください。' }); };
+  s.src = EXEC + '?' + params + '&callback=' + name;
+  document.body.appendChild(s);
+}
+function refresh() {
+  if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 60) bottomSeen = true;
+  btn.disabled = !opened || sending || !bottomSeen || !ck.checked;
+  hint.textContent = openError || (!opened ? 'ご本人の確認中です…' :
+    !bottomSeen ? '最後までスクロールしてください' : !ck.checked ? 'チェックを入れると押せます' : 'ご確認ありがとうございます');
+}
+window.addEventListener('scroll', refresh, { passive: true });
+window.addEventListener('resize', refresh);
+ck.addEventListener('change', refresh);
+refresh();
+jsonp('action=consent_open&uid=' + encodeURIComponent(UID) + '&t=' + encodeURIComponent(TOKEN), function(res) {
+  if (!res.ok || !res.version) {
+    openError = res.message || 'ご本人の確認ができません。公式LINEの「塾内規定」から開き直してください。';
+    refresh(); return;
   }
-  function refresh() {
-    if (atBottom()) bottomSeen = true;
-    var ok = bottomSeen && ck.checked;
-    btn.disabled = !ok;
-    hint.textContent = !bottomSeen ? '最後までスクロールしてください'
-                     : (!ck.checked ? 'チェックを入れると押せます' : 'ご確認ありがとうございます');
+  opened = true; version = res.version;
+  document.getElementById('ver').textContent = version;
+  if (res.consented) {
+    document.getElementById('bar').style.display = 'none';
+    var notice = document.createElement('p');
+    notice.textContent = 'ご同意済みです。塾内規定はいつでもこちらでご確認いただけます。';
+    notice.style.cssText = 'padding:16px;background:#edf6f1;color:#235645;text-align:center';
+    document.getElementById('wrap').prepend(notice);
   }
-  window.addEventListener('scroll', refresh, { passive: true });
-  window.addEventListener('resize', refresh);
-  ck.addEventListener('change', refresh);
   refresh();
-
-  var sending = false;
-  btn.addEventListener('click', function () {
-    if (sending || btn.disabled) return;
-    sending = true;
-    btn.textContent = '送信中…';
-    btn.disabled = true;
-    jsonp('action=consent_web&uid=' + encodeURIComponent(UID) + '&t=' + encodeURIComponent(TOKEN),
-      function (res) {
-      if (res && res.ok) {
-        document.getElementById('wrap').style.display = 'none';
-        document.getElementById('bar').style.display = 'none';
-        document.getElementById('done').style.display = 'block';
-        window.scrollTo(0, 0);
-      } else {
-        sending = false;
-        btn.disabled = false;
-        btn.textContent = '同意する';
-        hint.textContent = (res && res.message) ? res.message : '送信に失敗しました。通信環境をご確認ください。';
-      }
-    });
+});
+btn.addEventListener('click', function() {
+  if (btn.disabled || sending || !opened) return;
+  sending = true; btn.textContent = '送信中…'; refresh();
+  jsonp('action=consent_web&uid=' + encodeURIComponent(UID) + '&t=' + encodeURIComponent(TOKEN) + '&version=' + encodeURIComponent(version), function(res) {
+    if (res.ok) {
+      document.getElementById('wrap').style.display = 'none';
+      document.getElementById('bar').style.display = 'none';
+      document.getElementById('done').style.display = 'block';
+      window.scrollTo(0, 0);
+    } else {
+      sending = false; btn.textContent = '同意する'; refresh();
+      hint.textContent = res.message || '保存を確認できませんでした。もう一度お試しください。';
+    }
   });
+});
 
 </script>
 </body>
