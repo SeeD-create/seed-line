@@ -220,7 +220,8 @@ var EXEC = 'https://script.google.com/macros/s/AKfycbztDdOm_W6RlbxVj-TfG7zxjxhsp
 // 共通UI。本人確認が成功するまで送信させず、通信失敗でも保存済みと表示しない。
 var ck = document.getElementById('ck'), btn = document.getElementById('agree'),
     hint = document.getElementById('hint'), bottomSeen = false, opened = false,
-    sending = false, version = '', openError = '';
+    sending = false, version = (document.getElementById('ver') || {}).textContent || '', openError = '';
+version = version.trim();
 function jsonp(params, cb) {
   var name = 'seedcb' + Date.now() + Math.floor(Math.random() * 1e6);
   var s = document.createElement('script'), finished = false;
@@ -251,8 +252,11 @@ jsonp('action=consent_open&uid=' + encodeURIComponent(UID) + '&t=' + encodeURICo
     openError = res.message || 'ご本人の確認ができません。公式LINEの「塾内規定」から開き直してください。';
     refresh(); return;
   }
-  opened = true; version = res.version;
-  document.getElementById('ver').textContent = version;
+  if (!version || res.version !== version) {
+    openError = '規定の版が更新されています。公式LINEの「塾内規定」から開き直してください。';
+    refresh(); return;
+  }
+  opened = true;
   if (res.consented) {
     document.getElementById('bar').style.display = 'none';
     var notice = document.createElement('p');
